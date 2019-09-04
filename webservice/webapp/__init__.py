@@ -11,8 +11,7 @@ def home():
     if request.method == 'GET':
  	key = request.args.get('key')
 	cmd = "/home/website/bin/scalkeyarcgen -t arc -C 3 -k 4 -m 2 -s 6 %s" % key
-	print cmd
-	retkey  = os.popen(cmd).read()
+	retkey  = os.popen(cmd).read().split()[0]
 	print retkey
 	return render_template('ok.html', retkey=retkey)
 		

@@ -8,4 +8,4 @@ script=$1
 	--conf spark.hadoop.fs.s3a.endpoint=http://sreport.scality.com \
         --jars file:/root/spark/aws-java-sdk-1.7.4.jar,file:/root/spark/hadoop-aws-2.7.3.jar \
         --driver-class-path=/root/spark/aws-java-sdk-1.7.4.jar:/root/spark/hadoop-aws-2.7.3.jar \
-	./$script
+	./$script 1
