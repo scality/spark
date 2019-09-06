@@ -21,7 +21,7 @@ else:
     # Handle target environment that doesn't support HTTPS verification
     ssl._create_default_https_context = _create_unverified_https_context
 
-spark = SparkSession.builder.getOrCreate()
+spark = SparkSession.builder.appName("Generate Listkeys").getOrCreate()
 """
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 sc = SparkContext('local','example')
@@ -45,11 +45,8 @@ def listkeys(row):
 s = Supervisor(url="https://sup.scality.com:2443",login="root",passwd="admin")
 listm = sorted(s.supervisorConfigDso(dsoname="IT")['nodes'])
 df = spark.createDataFrame(listm)
-print df.show(36)
-print df.rdd.getNumPartitions()
-#listfullkeys = df.rdd.repartition(36).map(lambda x:listkeys(x))
-listfullkeys = df.rdd.map(lambda x:listkeys(x))
+listfullkeysshu = df.rdd.repartition(24)
+listfullkeys = listfullkeysshu.map(lambda x:listkeys(x))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
-print dfnew.show(10)
-listkeys = "s3a://spark/listkeys-IT-2.csv" 
-dfnew.write.format('csv').options(header='false').save(listkeys)
+listkeys = "s3a://spark/listkeys-IT-6.csv" 
+dfnew.write.format('csv').mode("overwrite").options(header='false').save(listkeys)
