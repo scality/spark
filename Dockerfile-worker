@@ -1,14 +1,28 @@
 FROM openjdk:8-alpine
-RUN apk --update add wget tar bash
+RUN apk --update add wget tar bash gcc openssl-dev make
+RUN apk --update add python-dev
+RUN apk --update add musl-dev libffi-dev 
 RUN apk --no-cache add bash procps python R py-pip
+RUN apk --no-cache add curl libcurl curl-dev g++
+ENV PYCURL_SSL_LIBRARY=openssl
 RUN pip install requests
-RUN wget http://apache.mirror.anlx.net/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
+RUN pip install pyopenssl
+RUN pip install certifi
+RUN pip install pycurl
+RUN pip install kazoo
+RUN pip install pyzmq
+RUN pip install python-dateutil
 
-RUN tar -xzf spark-2.4.3-bin-hadoop2.7.tgz && \
+#RUN wget http://apache.mirror.anlx.net/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
+COPY spark-2.4.3-bin-hadoop2.7.tgz /tmp/spark-2.4.3-bin-hadoop2.7.tgz
+
+RUN tar -xzf /tmp/spark-2.4.3-bin-hadoop2.7.tgz && \
     mv spark-2.4.3-bin-hadoop2.7 /spark && \
-    rm spark-2.4.3-bin-hadoop2.7.tgz
+    rm /tmp/spark-2.4.3-bin-hadoop2.7.tgz
 
 COPY start-worker.sh /start-worker.sh
+COPY scality-0.1-py2-none-any.whl /tmp/
+RUN pip install --no-index file:///tmp/scality-0.1-py2-none-any.whl
 RUN chmod +x /start-worker.sh
 
 ENTRYPOINT ["/start-worker.sh"]
