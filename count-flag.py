@@ -27,8 +27,9 @@ else:
 	print "RUN on cluster"
 	spark = SparkSession.builder.getOrCreate()
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listmIT-node0[1-6]-n[1-6].csv")
+#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listmIT-node0[1-6]-n[1-6].csv")
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://video/all-fixed-light.csv")
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys-IT.csv/*")
 
 #print df.groupBy("_c3").count().show(32)
 print df.groupBy("_c3").agg(F.countDistinct("_c1")).show() 
