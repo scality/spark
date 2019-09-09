@@ -9,7 +9,8 @@ import hashlib
 import binascii
 import time
 
-#spark = SparkSession.builder.appName("Check Split Objects").getOrCreate()
+spark = SparkSession.builder.appName("Check Split Objects").getOrCreate()
+"""
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 sc = SparkContext('local','example')
@@ -19,7 +20,7 @@ sc._jsc.hadoopConfiguration().set('fs.s3a.access.key', 'VKIKE9MQ8AM3I5Y0LOZG')
 sc._jsc.hadoopConfiguration().set('fs.s3a.secret.key', 'd1EF3mUbLYBp2oezdzdh37RdQPtXHfmmst0R/zd6')
 sc._jsc.hadoopConfiguration().set('fs.s3a.endpoint', 'http://sreport.scality.com')
 spark = SQLContext(sc)
-
+"""
 
 def to_bytes(h):
         return binascii.unhexlify(h)
@@ -79,6 +80,13 @@ def sparse(f):
 		lst.append(key.upper())
 	return lst
 
+def decode_video(r):
+        usermd = r.headers['X-Scal-Usermd']
+        b64 = base64.b64decode(usermd)
+        s = re.findall(r'(V0004sizeL)([0-9]+)',b64)
+	video = str("video"+s[0][1])
+        return video
+
 def checkarc(key):
 
 	if key[-2:] == "70":
@@ -91,29 +99,23 @@ def checkarc(key):
 		except Exception as e:
 			return ("chord",key,"KO")
 
+
 def getarcid(key,arc=False):
         header = {}
         header['x-scal-split-policy'] = "raw"
-        r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header,stream=True)
-        if r.status_code == 200:
-                usermd = r.headers['X-Scal-Usermd']
-                b64 = base64.b64decode(usermd)
-		if arc:
-			h64 = b64.encode('hex')
-			m = re.findall(r'(00000001000080007b9c6d03000000010000000014)([0-9-a-f]{40})',h64)
-			o = re.findall(r'(00000001000080007b9c6d03000000010000000013)([0-9-a-f]{38})',h64)
-			n = re.findall(r'(00000001000080007b9c6d03000000010000000012)([0-9-a-f]{36})',h64)
-			if m:
-				key = m[0][1]
-			if o:
-				key = o[0][1]
-			if n:
-				key = n[0][1]
-                s = re.findall(r'(V0004sizeL)([0-9]+)',b64)
-		video = s[0][1]
-		return (key,video)
-	else:
-		return (key,"KO")
+        if arc:
+                r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key))
+                if r.status_code == 200:
+                        keytext = r.headers["X-Scal-Attr-Object-Id"]
+                        s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
+                        key = s[0][1]
+                        video =  decode_video(r)
+                        return (key,video)
+        else:
+                r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header)
+                if r.status_code == 200:
+                        video =  decode_video(r)
+                        return (key,video)
 
 def blob(row):
 	key = row._c1
@@ -136,13 +138,12 @@ def blob(row):
 		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
 
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list.csv")
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys-IT-5.csv/")
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://video/t.csv")
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://video/all-fixed-light.csv")
+#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list.csv")
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys-IT-5.csv/")
+#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list-broken.csv")
 
-dfARCsingle = df.filter(df["_c1"].rlike(r".*000000005.........$") & df["_c3"].rlike("32")).select("_c1").distinct()
-
+dfARCsingle = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1").distinct()
+dfARCsingle.show(20,False)
 mainchunk = "s3a://sparkoutput/output-single-MAIN.csv"
 dfARCsingle.write.format('csv').mode("overwrite").options(header='false').save(mainchunk)
 
@@ -164,19 +165,25 @@ dfARCSYNC.write.format('csv').mode("overwrite").options(header='false').save(sin
 
 df2 = dfARCSYNC.withColumnRenamed("_c1","digkey")
 
-inner_join_true =  dfnew.join(df2,["digkey"], "left_semi").withColumn('is_present', F.lit(True)).select('key','size','is_present').dropDuplicates()
-inner_join_false =  dfnew.join(df2,["digkey"], "leftanti").withColumn('is_present_false', F.lit(False)).select('key','is_present_false').dropDuplicates()
+inner_join_true =  dfnew.join(df2,["digkey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','size','is_present')
+inner_join_false =  dfnew.join(df2,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','size','is_present')
 
 print inner_join_true.show(20,False)
 print inner_join_false.show(20,False)
 
-inner_join_false = inner_join_false.withColumnRenamed("key","false_key")
-df_final = inner_join_true.join(inner_join_false, inner_join_true.key == inner_join_false.false_key,"left")
+df_final = inner_join_true.union(inner_join_false)
 print df_final.show(10,False)
-columns_to_drop = ['is_present_false', 'is_present','false_key']
-df_all = df_final.withColumn('good_state', F.when( ( df_final.is_present_false == 'false' ),False).otherwise(True)).drop(*columns_to_drop)
+
+
+df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'),F.max('size').alias('size'))
+
 print df_all.show(10,False)
 
+columns_to_drop = ['count','sum']
+df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("count") ),True).otherwise(False)).drop(*columns_to_drop)
+
+print df_final_all.show(10,False)
+
 all = "s3a://sparkoutput/output-FILE-SHAPE.csv"
-df_all.write.format('csv').mode("overwrite").options(header='false').save(all)
+df_final_all.write.format('csv').mode("overwrite").options(header='false').save(all)
 

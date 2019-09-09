@@ -37,35 +37,35 @@ def gen_md5_from_id(key):
 
 def checkarc(key):
 
-	if key[-2:] == "70":
+	if key[-2] == "7":
 		key, video = getarcid(key,True)
 		return ("arc",key , video)
 	else:
 		key , video = getarcid(key)
 		return ("chord",key , video)
 
+def decode_video(r):
+	usermd = r.headers['X-Scal-Usermd']
+	b64 = base64.b64decode(usermd)
+	s = re.findall(r'(V0004sizeL)([0-9]+)',b64)
+	return s[0][1]
+
 def getarcid(key,arc=False):
         header = {}
         header['x-scal-split-policy'] = "raw"
-        r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header,stream=True)
-        if r.status_code == 200:
-                usermd = r.headers['X-Scal-Usermd']
-                b64 = base64.b64decode(usermd)
-		if arc:
-			h64 = b64.encode('hex')
-			m = re.findall(r'(00000001000080007b9c6d03000000010000000014)([0-9-a-f]{40})',h64)
-			o = re.findall(r'(00000001000080007b9c6d03000000010000000013)([0-9-a-f]{38})',h64)
-			n = re.findall(r'(00000001000080007b9c6d03000000010000000012)([0-9-a-f]{36})',h64)
-			if m:
-				key = m[0][1]
-			if o:
-				key = o[0][1]
-			if n:
-				key = n[0][1]
-                s = re.findall(r'(V0004sizeL)([0-9]+)',b64)
-		video = s[0][1]
-		return (key,video)
-
+	if arc:
+		r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key))
+		if r.status_code == 200:
+			keytext = r.headers["X-Scal-Attr-Object-Id"]
+			s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
+			key = s[0][1]
+			video =  decode_video(r)
+			return (key,video)
+	else:
+		r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header)
+		if r.status_code == 200:
+			video =  decode_video(r)
+			return (key,video)
 
 def blob(row):
 	key = row._c1

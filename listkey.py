@@ -48,5 +48,5 @@ df = spark.createDataFrame(listm)
 listfullkeysshu = df.rdd.repartition(24)
 listfullkeys = listfullkeysshu.map(lambda x:listkeys(x))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
-listkeys = "s3a://spark/listkeys-IT-6.csv" 
+listkeys = "s3a://spark/listkeys.csv" 
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(listkeys)
