@@ -139,7 +139,7 @@ def blob(row):
 
 
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list.csv")
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys-IT-5.csv/")
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv")
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list-broken.csv")
 
 dfARCsingle = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1").distinct()
