@@ -55,10 +55,13 @@ def getarcid(key,arc=False):
 			h64 = b64.encode('hex')
 			m = re.findall(r'(00000001000080007b9c6d03000000010000000014)([0-9-a-f]{40})',h64)
 			o = re.findall(r'(00000001000080007b9c6d03000000010000000013)([0-9-a-f]{38})',h64)
+			n = re.findall(r'(00000001000080007b9c6d03000000010000000012)([0-9-a-f]{36})',h64)
 			if m:
 				key = m[0][1]
 			if o:
 				key = o[0][1]
+			if n:
+				key = n[0][1]
                 s = re.findall(r'(V0004sizeL)([0-9]+)',b64)
 		video = s[0][1]
 		return (key,video)
