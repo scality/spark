@@ -142,7 +142,7 @@ def blob(row):
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv")
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list-broken.csv")
 
-dfARCsingle = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1").distinct()
+dfARCsingle = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c2"].rlike("32")).select("_c1").distinct()
 dfARCsingle.show(20,False)
 mainchunk = "s3a://sparkoutput/output-single-MAIN.csv"
 dfARCsingle.write.format('csv').mode("overwrite").options(header='false').save(mainchunk)
@@ -154,7 +154,7 @@ print dfnew.show(20,False)
 single = "s3a://sparkoutput/output-single.csv"
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(single)
 
-dfARCSYNC = df.filter(df["_c1"].rlike(r".*000000005.........$") & df["_c3"].rlike("16")).select("_c1").distinct()
+dfARCSYNC = df.filter(df["_c1"].rlike(r".*000000005.........$") & df["_c2"].rlike("16")).select("_c1").distinct()
 dfARCSYNC = dfARCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 print "SYNC", dfARCSYNC.show(20,False)
