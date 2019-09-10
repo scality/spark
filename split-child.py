@@ -54,7 +54,7 @@ def getarcid(key,arc=False):
         header = {}
         header['x-scal-split-policy'] = "raw"
 	if arc:
-		r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key))
+		r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key.zfill(40)))
 		if r.status_code == 200:
 			keytext = r.headers["X-Scal-Attr-Object-Id"]
 			s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
@@ -62,17 +62,23 @@ def getarcid(key,arc=False):
 			video =  decode_video(r)
 			return (key,video)
 	else:
-		r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header)
+		r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)),headers=header)
 		if r.status_code == 200:
 			video =  decode_video(r)
 			return (key,video)
+
+def checkkey(key):
+	r = requests.head('http://127.0.0.1:81/proxy/arc/'+str(key.zfill(40)))
+	if r.status_code != 200:
+		print 'key:%s is broken? error code:%s' % (key,r.status_code)
+	
 
 def blob(row):
 	key = row._c1
 	header = {}
         header['x-scal-split-policy'] = "raw"
 	arc,key,video = checkarc(key)
-        r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key),headers=header,stream=True)
+        r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key.zfill(40)),headers=header,stream=True)
 	if r.status_code == 200:
 		chunks = ""
 		for chunk in r.iter_content(chunk_size=1024000000):
@@ -82,7 +88,9 @@ def blob(row):
 		chunkshex =  chunks.encode('hex')
 		rtlst = []
 		for k in list(set(sparse(chunkshex))):
-			rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:-14],"size":video})
+			checkkey(k)
+			dkey = gen_md5_from_id(k)
+			rtlst.append({"key":key,"subkey":k,"digkey":dkey[:-14],"size":video})
 		return rtlst
 	else:
 		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
@@ -114,8 +122,8 @@ def sparse(f):
 		key = oarc[1]
 		lst.append(key.upper())
 	return lst
-
-for i in ( "4216893FD1CE8A736EC3C6000000015110206070","34B1615B3EA50AE1861FF40000000050B9367C20"):
+#for i in ( "4216893FD1CE8A736EC3C6000000015110206070","34B1615B3EA50AE1861FF40000000050B9367C20","722138B459ABCA3B72632E000000005006824120"):
+for i in ( "34B1615B3EA50AE1861FF40000000050B9367C20","722138B459ABCA3B72632E000000005006824120"):
 	rkey = Row(_c1=i)
+	print rkey
 	print blob(rkey)
-

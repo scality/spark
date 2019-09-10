@@ -104,7 +104,7 @@ def getarcid(key,arc=False):
         header = {}
         header['x-scal-split-policy'] = "raw"
         if arc:
-                r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key))
+                r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key.zfill(40)))
                 if r.status_code == 200:
                         keytext = r.headers["X-Scal-Attr-Object-Id"]
                         s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
@@ -112,7 +112,7 @@ def getarcid(key,arc=False):
                         video =  decode_video(r)
                         return (key,video)
         else:
-                r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key),headers=header)
+                r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)),headers=header)
                 if r.status_code == 200:
                         video =  decode_video(r)
                         return (key,video)
@@ -122,7 +122,7 @@ def blob(row):
 	header = {}
         header['x-scal-split-policy'] = "raw"
 	arc,key,video = checkarc(key)
-        r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key),headers=header,stream=True)
+        r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key.zfill(40)),headers=header,stream=True)
 	if r.status_code == 200:
 		chunks = ""
 		for chunk in r.iter_content(chunk_size=1024000000):
