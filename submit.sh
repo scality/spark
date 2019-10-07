@@ -1,7 +1,8 @@
 script=$1
 ./spark-2.4.3-bin-hadoop2.7/bin/spark-submit --master spark://178.33.63.238:7077 \
-        --driver-memory=12g \
-        --executor-memory=12g \
+        --driver-memory=10g \
+        --executor-memory=10g \
+	--total-executor-cores=60 \
 	--conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
 	--conf spark.hadoop.fs.s3a.access.key=VKIKE9MQ8AM3I5Y0LOZG \
 	--conf spark.hadoop.fs.s3a.secret.key=d1EF3mUbLYBp2oezdzdh37RdQPtXHfmmst0R/zd6 \

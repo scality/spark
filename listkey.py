@@ -38,7 +38,7 @@ def listkeys(row):
 	n = DaemonFactory().get_daemon("node",login="root", passwd="admin", url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso="IT")
 	for k in n.listKeysIter():
 		if len(k.split(",")[0]) > 30 :
-			klist.append([k.rstrip().split(',')[i] for i in [0,1,3] ])	
+			klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])	
 	return klist
 
 

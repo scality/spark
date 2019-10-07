@@ -21,7 +21,6 @@ sc._jsc.hadoopConfiguration().set('fs.s3a.secret.key', 'd1EF3mUbLYBp2oezdzdh37Rd
 sc._jsc.hadoopConfiguration().set('fs.s3a.endpoint', 'http://sreport.scality.com')
 spark = SQLContext(sc)
 """
-
 def to_bytes(h):
         return binascii.unhexlify(h)
 
@@ -111,11 +110,15 @@ def getarcid(key,arc=False):
                         key = s[0][1]
                         video =  decode_video(r)
                         return (key,video)
+		else:
+			return (key,'KO')
         else:
                 r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)),headers=header)
                 if r.status_code == 200:
                         video =  decode_video(r)
                         return (key,video)
+		else:
+			return (key,'KO')
 
 def blob(row):
 	key = row._c1
@@ -140,9 +143,19 @@ def blob(row):
 
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list.csv")
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv")
+#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/t.csv")
 #df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list-broken.csv")
 
-dfARCsingle = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c2"].rlike("32")).select("_c1").distinct()
+df_split = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1")
+
+dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
+dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
+
+dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*20$"))
+dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
+
+dfARCsingle = dfARCsingle.union(dfCOSsingle)
+
 dfARCsingle.show(20,False)
 mainchunk = "s3a://sparkoutput/output-single-MAIN.csv"
 dfARCsingle.write.format('csv').mode("overwrite").options(header='false').save(mainchunk)
@@ -154,8 +167,18 @@ print dfnew.show(20,False)
 single = "s3a://sparkoutput/output-single.csv"
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(single)
 
-dfARCSYNC = df.filter(df["_c1"].rlike(r".*000000005.........$") & df["_c2"].rlike("16")).select("_c1").distinct()
+df_sync = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("16")).select("_c1")
+
+dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
+dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
 dfARCSYNC = dfARCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
+
+
+dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*20$"))
+dfCOCSYNC = dfCOCSYNC.groupBy("_c1").count()
+dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
+
+dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 print "SYNC", dfARCSYNC.show(20,False)
 
@@ -173,7 +196,6 @@ print inner_join_false.show(20,False)
 
 df_final = inner_join_true.union(inner_join_false)
 print df_final.show(10,False)
-
 
 df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'),F.max('size').alias('size'))
 
