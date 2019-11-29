@@ -22,6 +22,7 @@ else:
     ssl._create_default_https_context = _create_unverified_https_context
 
 spark = SparkSession.builder.appName("Generate Listkeys").getOrCreate()
+
 """
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 sc = SparkContext('local','example')
@@ -49,5 +50,5 @@ print df.show(36,False)
 dfnew = df.repartition(8)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
-listkeys = "s3a://spark/listkeys.csv" 
+listkeys = "file:///fs/spark/listkeys.csv" 
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(listkeys)

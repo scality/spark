@@ -25,8 +25,9 @@ if local is True:
 	spark = SQLContext(sc)
 else:
 	print "RUN on cluster"
-	spark = SparkSession.builder.appName("Generate Listkeys").getOrCreate()
+	spark = SparkSession.builder.appName("Count flags").getOrCreate()
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv/*")
+#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv/*")
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("file:///fs/spark/listkeys.csv/_temporary/0/*/*.csv")
 
-print df.groupBy("_c2").agg(F.countDistinct("_c1")).show() 
+print df.groupBy("_c3").agg(F.countDistinct("_c1")).show() 
