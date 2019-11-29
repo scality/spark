@@ -7,13 +7,19 @@ from pyspark import SparkContext
 
 spark = SparkSession.builder.appName("Remove Orphans").getOrCreate()
 
+
+RING = "IT"
+if len(sys.argv)> 1:
+        RING = sys.argv[1]
+
 def deletekey(row):
 	key = row._c0
         r = requests.delete('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)))
 	return ( key, r.status_code)
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("file:///fs/spark/output/output-spark-ARCORPHAN.csv")
+files = "file:///fs/spark/output/output-spark-ARCORPHAN-%s.csv" % RING
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
-deletedorphans = "file:///fs/spark/output/output-spark-DELETED-ARCORPHAN.csv"
+deletedorphans = "file:///fs/spark/output/output-spark-DELETED-ARCORPHAN-%s.csv" % RING
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
