@@ -7,26 +7,19 @@ from pyspark import SparkContext
 
 spark = SparkSession.builder.appName("Remove Orphans").getOrCreate()
 
-"""
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
-sc = SparkContext('local','example')
 
-sc._jsc.hadoopConfiguration().set("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-sc._jsc.hadoopConfiguration().set('fs.s3a.access.key', 'VKIKE9MQ8AM3I5Y0LOZG')
-sc._jsc.hadoopConfiguration().set('fs.s3a.secret.key', 'd1EF3mUbLYBp2oezdzdh37RdQPtXHfmmst0R/zd6')
-sc._jsc.hadoopConfiguration().set('fs.s3a.endpoint', 'http://sreport.scality.com')
-spark = SQLContext(sc)
-"""
+RING = "IT"
+if len(sys.argv)> 1:
+        RING = sys.argv[1]
 
 def deletekey(row):
 	key = row._c0
         r = requests.delete('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)))
-        #r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)))
 	return ( key, r.status_code)
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("file:///fs/spark/output/output-spark-ARCORPHAN.csv")
+files = "file:///fs/spark/output/output-spark-ARCORPHAN-%s.csv" % RING
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 rdd = df.rdd.map(deletekey).toDF()
-#rddnew = rdd.flatMap(lambda x: x).toDF()
 rdd.show(10,False)
-deletedorphans = "file:///fs/spark/output/output-spark-DELETED-ARCORPHAN.csv"
+deletedorphans = "file:///fs/spark/output/output-spark-DELETED-ARCORPHAN-%s.csv" % RING
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)

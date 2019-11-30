@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
 from pyspark import SparkContext
 import os
+import sys
 import requests
 import re
 import base64
@@ -21,6 +22,13 @@ sc._jsc.hadoopConfiguration().set('fs.s3a.secret.key', 'd1EF3mUbLYBp2oezdzdh37Rd
 sc._jsc.hadoopConfiguration().set('fs.s3a.endpoint', 'http://sreport.scality.com')
 spark = SQLContext(sc)
 """
+
+
+RING = "IT"
+
+if len(sys.argv)> 1:
+	RING = sys.argv[1]
+
 def to_bytes(h):
         return binascii.unhexlify(h)
 
@@ -141,30 +149,34 @@ def blob(row):
 		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
 
 
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list.csv")
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv")
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/t.csv")
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/list-broken.csv")
+files = "file:///fs/spark/listkeys-%s.csv" % RING
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 df_split = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1")
+
+df_split.show(20,False)
 
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
 
+dfARCsingle.show(20,False)
+
 dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*20$"))
 dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
+
+dfCOSsingle.show(20,False)
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
 dfARCsingle.show(20,False)
-mainchunk = "s3a://sparkoutput/output-single-MAIN.csv"
+mainchunk = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
 dfARCsingle.write.format('csv').mode("overwrite").options(header='false').save(mainchunk)
 
 rdd = dfARCsingle.rdd.map(lambda x : blob(x))
 rrdnew = rdd.flatMap(lambda x: x)
 dfnew = rdd.flatMap(lambda x: x).toDF()
 print dfnew.show(20,False)
-single = "s3a://sparkoutput/output-single.csv"
+single = "file:///fs/spark/output/output-single-%s.csv" % RING
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(single)
 
 df_sync = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("16")).select("_c1")
@@ -182,7 +194,7 @@ dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 print "SYNC", dfARCSYNC.show(20,False)
 
-singlesync = "s3a://sparkoutput/output-single-SYNC.csv"
+singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
 dfARCSYNC.write.format('csv').mode("overwrite").options(header='false').save(singlesync)
 
 
@@ -206,6 +218,6 @@ df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("
 
 print df_final_all.show(10,False)
 
-all = "s3a://sparkoutput/output-FILE-SHAPE.csv"
+all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
 df_final_all.write.format('csv').mode("overwrite").options(header='false').save(all)
 

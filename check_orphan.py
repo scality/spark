@@ -1,7 +1,7 @@
 import os
 import time
 import requests
-import re
+import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
@@ -18,6 +18,11 @@ sc._jsc.hadoopConfiguration().set('fs.s3a.endpoint', 'http://sreport.scality.com
 spark = SQLContext(sc)
 """
 
+RING = "IT"
+if len(sys.argv)> 1:
+	RING = sys.argv[1]
+
+
 def getarcid(row):
 	key = row._c1
         header = {}
@@ -31,8 +36,8 @@ def getarcid(row):
 	else:
 		return(key,"UNKNOWN|RING_FAILURE|SREBUILDD_DOWN")
 
-#df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("s3a://spark/listkeys.csv/")
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load("file:///fs/spark/listkeys.csv/")
+files = "file:///fs/spark/listkeys-%s.csv/" % RING
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 dfARC = df.filter( df["_c1"].rlike(r".*70$") &  (df["_c3"] != 1) )
 dfcARC = dfARC.groupBy("_c1").count().filter("count < 4")
@@ -45,7 +50,6 @@ print corruptednew.show(10,False)
 df_final_all = corruptednew.filter(corruptednew["_2"] == "CORRUPTED")
 print df_final_all.show(10,False)
 
-#filenamearc = "s3a://sparkoutput/output-spark-ARCORPHAN.csv"
-filenamearc = "file:///fs/spark/output/output-spark-ARCORPHAN.csv"
+filenamearc = "file:///fs/spark/output/output-spark-ARCORPHAN-%s.csv" % RING
 df_final_all.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)
 

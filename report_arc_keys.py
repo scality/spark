@@ -6,17 +6,17 @@ import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-key = "CMON"
+spark = SparkSession.builder.appName("Check Orphans").getOrCreate()
+
+
 RING = "IT"
-
 if len(sys.argv)> 1:
-	key = sys.argv[1]
-	RING = sys.argv[2]
+	RING = sys.argv[1]
 
-spark = SparkSession.builder.appName("Check Keys").getOrCreate()
 files = "file:///fs/spark/listkeys-%s.csv/" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
-dfARC = df.filter( df["_c1"] == key )
-dfARC.show(10,False)
+dfARC = df.filter( df["_c1"].rlike(r".*70$"))
+filenamearc = "file:///fs/spark/output/output-spark-ARC-%s.csv" % RING
+dfARC.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)
 
