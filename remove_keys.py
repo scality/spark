@@ -10,7 +10,7 @@ from scality.supervisor import Supervisor
 from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
 from scality.key import Key
 from scality.storelib.storeutils import uks_parse
-
+import yaml
 
 import ssl
 try:
@@ -25,12 +25,19 @@ else:
 spark = SparkSession.builder.appName("Removes Keys").getOrCreate()
 
 RING = "IT"
+RING = sys.argv[1]
 
-if len(sys.argv)> 1:
-    RING = sys.argv[1]
+with open("./config.yml", 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
 
-def delete_key(key, dsolist, ring):
+user = cfg["sup"]["login"]
+password = cfg["sup"]["password"]
+url = cfg["sup"]["url"]
 
+
+def delete_key(key, dsolist):
+
+    print key
     node = {}
     nodes = {}
     key = Key(key._c0)
@@ -38,7 +45,7 @@ def delete_key(key, dsolist, ring):
     for n in dsolist:
         nid = '%s:%s' % (n['ip'], n['chordport'])
         try:
-            nodes[nid] = DaemonFactory().get_daemon("node", url='https://{0}:{1}'.format(n['ip'], n['adminport']), chord_addr=n['ip'], chord_port=n['chordport'], login="root",passwd="admin", dso=ring)
+            nodes[nid] = DaemonFactory().get_daemon("node", url='https://{0}:{1}'.format(n['ip'], n['adminport']), chord_addr=n['ip'], chord_port=n['chordport'], login=user,passwd=password, dso=RING)
         except ScalFactoryExceptionTypeNotFound as e :
 	    return ({"key":key.getHexPadded() , "status":"FIND_NODE_KO"})
         if not node: node = nodes[nid]
@@ -51,15 +58,16 @@ def delete_key(key, dsolist, ring):
         et = check.chunkapiStoreOp("delete", key=key.getHexPadded(),extra_params={"version": version })
 	return ({"key":key.getHexPadded() , "status":et.find("result").find("status").text })
     except Exception as e:
+	print e
 	return ({"key":key.getHexPadded() , "status":"DELETE_KO"})
 
-s = Supervisor(url="https://sup.scality.com:2443",login="root",passwd="admin")
+s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 
-filenamearc = "file:///fs/spark/output/output-spark-ARC-%s.csv" % RING
+filenamearc = "file:///fs/spark/output/output-spark-KEYS_TOBE_REMOVED-%s.csv" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
 
-df_keys = df.rdd.map(lambda x:delete_key(x,listm,RING)).toDF()
-df_keys.show(10,False)
+df_keys = df.rdd.map(lambda x:delete_key(x,listm))
+df_keys = df_keys.toDF()
 delete_keys = "file:///fs/spark/output/removed_keys-%s.csv" % RING
 df_keys.write.format('csv').mode("overwrite").options(header='false').save(delete_keys)

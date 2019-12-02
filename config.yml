@@ -1,0 +1,10 @@
+master: "spark://178.33.63.238:7077"
+ring: "IT"
+s3:
+  access_key: "VKIKE9MQ8AM3I5Y0LOZG"
+  secret_key: "d1EF3mUbLYBp2oezdzdh37RdQPtXHfmmst0R/zd6"
+  endpoint: "http://sreport.scality.com"
+sup:
+  url: "https://sup.scality.com:2443"
+  login: "root"
+  password: "admin"

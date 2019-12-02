@@ -8,9 +8,7 @@ from pyspark import SparkContext
 spark = SparkSession.builder.appName("Remove Orphans").getOrCreate()
 
 
-RING = "IT"
-if len(sys.argv)> 1:
-        RING = sys.argv[1]
+RING = sys.argv[1]
 
 def deletekey(row):
 	key = row._c0

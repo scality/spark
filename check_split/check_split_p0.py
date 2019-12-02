@@ -8,8 +8,7 @@ spark = SparkSession.builder.appName("Check Split Objects P0").getOrCreate()
 
 RING = "IT"
 
-if len(sys.argv)> 1:
-	RING = sys.argv[1]
+RING = sys.argv[1]
 
 files = "file:///fs/spark/listkeys-%s.csv" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)

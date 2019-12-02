@@ -14,8 +14,7 @@ spark = SparkSession.builder.appName("Check Split Objects P1").getOrCreate()
 
 RING = "IT"
 
-if len(sys.argv)> 1:
-	RING = sys.argv[1]
+RING = sys.argv[1]
 
 def to_bytes(h):
         return binascii.unhexlify(h)

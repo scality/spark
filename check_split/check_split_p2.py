@@ -10,8 +10,7 @@ spark = SparkSession.builder.appName("Check Split Objects P2").getOrCreate()
 
 RING = "IT"
 
-if len(sys.argv)> 1:
-	RING = sys.argv[1]
+RING = sys.argv[1]
 
 singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
 single = "file:///fs/spark/output/output-single-%s.csv" % RING

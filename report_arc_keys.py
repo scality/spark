@@ -6,12 +6,10 @@ import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-spark = SparkSession.builder.appName("Check Orphans").getOrCreate()
+spark = SparkSession.builder.appName("Gather ARC Objects").getOrCreate()
 
 
-RING = "IT"
-if len(sys.argv)> 1:
-	RING = sys.argv[1]
+RING = sys.argv[1]
 
 files = "file:///fs/spark/listkeys-%s.csv/" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
