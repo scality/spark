@@ -3,10 +3,9 @@ import pyspark.sql.functions as F
 from pyspark import SparkContext
 import sys
 
-spark = SparkSession.builder.appName("Count flags Uniq").getOrCreate()
-
-
 RING = sys.argv[1]
+
+spark = SparkSession.builder.appName("Count flags Uniq ring:"+RING).getOrCreate()
 
 files = "file:///fs/spark/listkeys-%s.csv" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)

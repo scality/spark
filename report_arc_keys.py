@@ -6,10 +6,8 @@ import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-spark = SparkSession.builder.appName("Gather ARC Objects").getOrCreate()
-
-
 RING = sys.argv[1]
+spark = SparkSession.builder.appName("Gather ARC Objects ring:"+RING).getOrCreate()
 
 files = "file:///fs/spark/listkeys-%s.csv/" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)

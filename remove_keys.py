@@ -22,10 +22,10 @@ else:
     # Handle target environment that doesn't support HTTPS verification
     ssl._create_default_https_context = _create_unverified_https_context
 
-spark = SparkSession.builder.appName("Removes Keys").getOrCreate()
-
 RING = "IT"
 RING = sys.argv[1]
+
+spark = SparkSession.builder.appName("Removes Keys ring:"+RING).getOrCreate()
 
 with open("./config.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)

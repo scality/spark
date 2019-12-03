@@ -5,9 +5,9 @@ import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-spark = SparkSession.builder.appName("Check Orphans").getOrCreate()
-
 RING = sys.argv[1]
+spark = SparkSession.builder.appName("Check Orphans ring:"+RING).getOrCreate()
+
 
 def getarcid(row):
 	key = row._c1

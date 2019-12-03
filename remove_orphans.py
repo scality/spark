@@ -5,10 +5,8 @@ import re
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-spark = SparkSession.builder.appName("Remove Orphans").getOrCreate()
-
-
 RING = sys.argv[1]
+spark = SparkSession.builder.appName("Remove Orphans ring:"+RING).getOrCreate()
 
 def deletekey(row):
 	key = row._c0
