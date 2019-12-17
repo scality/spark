@@ -10,8 +10,11 @@ spark = SparkSession.builder.appName("Remove Orphans ring:"+RING).getOrCreate()
 
 def deletekey(row):
 	key = row._c0
-        r = requests.delete('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)))
-	return ( key, r.status_code)
+	try:
+		r = requests.delete('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)))
+		return ( key, r.status_code)
+	except requests.exceptions.ConnectionError as e:
+		return (key,"ERROR_HTTP")
 
 files = "file:///fs/spark/output/output-spark-ARCORPHAN-%s.csv" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)

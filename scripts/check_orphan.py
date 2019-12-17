@@ -8,19 +8,20 @@ from pyspark import SparkContext
 RING = sys.argv[1]
 spark = SparkSession.builder.appName("Check Orphans ring:"+RING).getOrCreate()
 
-
 def getarcid(row):
-	key = row._c1
-        header = {}
-        header['x-scal-split-policy'] = "raw"
-	r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key.zfill(40)))
-	print key , r.status_code
-	if r.status_code == 200:
+    key = row._c1
+    header = {}
+    header['x-scal-split-policy'] = "raw"
+    try:
+	    r = requests.head(srebuildd_url+str(key.zfill(40)),timeout=10)
+	    if r.status_code == 200:
 		return (key,"OK")
-	elif r.status_code == 422:
+	    elif r.status_code == 422:
 		return (key,"CORRUPTED")
-	else:
+	    else:
 		return(key,"UNKNOWN|RING_FAILURE|SREBUILDD_DOWN")
+    except requests.exceptions.ConnectionError as e:
+        return (key,"ERROR_HTTP")
 
 files = "file:///fs/spark/listkeys-%s.csv/" % RING
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)

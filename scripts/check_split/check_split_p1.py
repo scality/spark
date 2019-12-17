@@ -36,7 +36,7 @@ def get_dig_key(name):
       oid = oid.zfill(16)
       volid = "00000000"
       svcid = "51"
-      specific = "102060"
+      specific = "102060" #Make sure to change it when the ARC schema changes
       cls = "70"
       key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
       return key.zfill(40)
@@ -97,42 +97,52 @@ def getarcid(key,arc=False):
         header = {}
         header['x-scal-split-policy'] = "raw"
         if arc:
-                r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key.zfill(40)))
-                if r.status_code == 200:
-                        keytext = r.headers["X-Scal-Attr-Object-Id"]
-                        s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
-                        key = s[0][1]
-                        video =  decode_video(r)
-                        return (key,video)
-		else:
-			return (key,'KO')
-        else:
-                r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)),headers=header)
-                if r.status_code == 200:
-                        video =  decode_video(r)
-                        return (key,video)
-		else:
-			return (key,'KO')
+		try:
+			r = requests.head('http://127.0.0.1:81/rebuild/arcdata/'+str(key.zfill(40)))
+			if r.status_code == 200:
+				keytext = r.headers["X-Scal-Attr-Object-Id"]
+				s = re.findall(r'(text=)([0-9-A-F]+)',keytext)
+				key = s[0][1]
+				video =  decode_video(r)
+				return (key,video)
+			else:
+				return (key,'KO')
+		except requests.exceptions.ConnectionError as e:
+			return (key,'KO_HTTP')
+	else:
+		try:
+			r = requests.head('http://127.0.0.1:81/proxy/chord/'+str(key.zfill(40)),headers=header)
+			if r.status_code == 200:
+				video =  decode_video(r)
+				return (key,video)
+			else:
+				return (key,'KO')
+		except requests.exceptions.ConnectionError as e:
+                        return (key,'KO_HTTP')
 
 def blob(row):
 	key = row._c1
 	header = {}
         header['x-scal-split-policy'] = "raw"
 	arc,key,video = checkarc(key)
-        r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key.zfill(40)),headers=header,stream=True)
-	if r.status_code == 200:
-		chunks = ""
-		for chunk in r.iter_content(chunk_size=1024000000):
-			if chunk:
-				chunks=chunk+chunk
+	try:
+		r = requests.get('http://127.0.0.1:81/proxy/'+str(arc)+'/'+str(key.zfill(40)),headers=header,stream=True)
+		if r.status_code == 200:
+			chunks = ""
+			for chunk in r.iter_content(chunk_size=1024000000):
+				if chunk:
+					chunks=chunk+chunk
 
-		chunkshex =  chunks.encode('hex')
-		rtlst = []
-		for k in list(set(sparse(chunkshex))):
-			rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:-14],"size":video})
-		return rtlst
-	else:
-		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
+			chunkshex =  chunks.encode('hex')
+			rtlst = []
+			for k in list(set(sparse(chunkshex))):
+				rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:-14],"size":video})
+			return rtlst
+		else:
+			return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
+
+	except requests.exceptions.ConnectionError as e:
+		return [{"key":key,"subkey":"KO_HTTP","digkey":"KO_HTTP","size":"KO_HTTP"}]
 
 files = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
