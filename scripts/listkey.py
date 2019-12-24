@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import requests
 requests.packages.urllib3.disable_warnings()
 
@@ -32,23 +33,34 @@ with open("./config.yml", 'r') as ymlfile:
 user = cfg["sup"]["login"]
 password = cfg["sup"]["password"]
 url = cfg["sup"]["url"]
+cpath = cfg["path"]
+path = "%s/listkeys-%s.csv/" % (cpath, RING)
 
-
+def prepare_path():
+	shutil.rmtree(path)
+	if not os.path.exists(path):
+		os.makedirs(path)
+	
 def listkeys(row):
 	klist = []
 	n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
+
+	fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
+	f = open(fname,"w+")
 	for k in n.listKeysIter():
 		if len(k.split(",")[0]) > 30 :
-			klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])	
-	return klist
+			#klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])	
+			data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
+			data = ",".join(data)
+			print >> f , data
+	return [( row.ip, row.adminport, 'OK')]
 
 
 s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
 print df.show(36,False)
-dfnew = df.repartition(8)
+dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
-listkeys = "file:///fs/spark/listkeys-%s.csv" % RING 
-dfnew.write.format('csv').mode("overwrite").options(header='false').save(listkeys)
+dfnew.show(1000)

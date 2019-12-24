@@ -1,5 +1,7 @@
 master: "spark://178.33.63.238:7077"
 ring: "IT"
+path: "/fs/spark/"
+srebuildd_ip: "127.0.0.1"
 s3:
   access_key: "VKIKE9MQ8AM3I5Y0LOZG"
   secret_key: "d1EF3mUbLYBp2oezdzdh37RdQPtXHfmmst0R/zd6"
@@ -8,3 +10,9 @@ sup:
   url: "https://sup.scality.com:2443"
   login: "root"
   password: "admin"
+spark.executor.cores: 2
+spark.executor.instances: 2
+spark.executor.memory: "4g"
+spark.driver.memory: "4g"
+spark.memory.offHeap.enabled: True
+spark.memory.offHeap.size: "3g"

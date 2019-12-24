@@ -1,6 +1,7 @@
 import os
 import time
 import yaml
+import requests
 import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
@@ -19,7 +20,7 @@ srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_url = "http://%s:81/rebuild/arcdata/" % srebuildd_ip
 
 spark = SparkSession.builder \
-     .appName("Check Orphans ring:"+RING) \
+     .appName("Check Orphans Corrupted ring:"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -28,14 +29,30 @@ spark = SparkSession.builder \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
      .getOrCreate()
 
-files = "file://%s/listkeys-%s.csv/" % ( PATH , RING)
+def getarcid(row):
+    key = row._c0
+    header = {}
+    header['x-scal-split-policy'] = "raw"
+    try:
+	    r = requests.head(srebuildd_url+str(key.zfill(40)),timeout=10)
+	    if r.status_code == 200:
+		return (key,"OK")
+	    elif r.status_code == 422:
+		return (key,"CORRUPTED")
+	    else:
+		return(key,"UNKNOWN|RING_FAILURE|SREBUILDD_DOWN")
+    except requests.exceptions.ConnectionError as e:
+        return (key,"ERROR_HTTP")
+
+files = "file://%s/output/output-spark-ARCORPHAN-%s.csv" % (PATH, RING)
+
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
-#check only not deleted KEYS ?
-#dfARC = df.filter( df["_c1"].rlike(r".*70$") &  (df["_c3"] != 1) )
-#check all the keys 
-dfARC = df.filter( df["_c1"].rlike(r".*70$"))
-dfcARC = dfARC.groupBy("_c1").count().filter("count < 3")
+df.rdd.getNumPartitions()
+corrupted = df.rdd.map(getarcid)
+corruptednew = corrupted.toDF()
 
-filenamearc = "file://%s/output/output-spark-ARCORPHAN-%s.csv" % (PATH, RING)
-dfcARC.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)
+df_final_all = corruptednew.filter(corruptednew["_2"] == "CORRUPTED")
+
+filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-%s.csv" % (PATH, RING)
+df_final_all.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)
