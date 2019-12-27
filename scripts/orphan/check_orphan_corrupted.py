@@ -52,7 +52,10 @@ df.rdd.getNumPartitions()
 corrupted = df.rdd.map(getarcid)
 corruptednew = corrupted.toDF()
 
-df_final_all = corruptednew.filter(corruptednew["_2"] == "CORRUPTED")
+df_final_all = corruptednew.filter(corruptednew["_2"] != "OK")
+df_final_ok = corruptednew.filter(corruptednew["_2"] == "OK")
 
 filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-%s.csv" % (PATH, RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)
+filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-BUT-OK-%s.csv" % (PATH, RING)
+df_final_ok.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)

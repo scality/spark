@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import requests
+import time
 requests.packages.urllib3.disable_warnings()
 
 from pyspark.sql import SparkSession, Row, SQLContext
@@ -41,13 +42,14 @@ def prepare_path():
 	if not os.path.exists(path):
 		os.makedirs(path)
 	
-def listkeys(row):
+def listkeys(row, now):
 	klist = []
 	n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
 
 	fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
 	f = open(fname,"w+")
-	for k in n.listKeysIter():
+	params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
+	for k in n.listKeysIter(extra_params=params):
 		if len(k.split(",")[0]) > 30 :
 			#klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])	
 			data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
@@ -55,12 +57,13 @@ def listkeys(row):
 			print >> f , data
 	return [( row.ip, row.adminport, 'OK')]
 
-
+now = int(str(time.time()).split('.')[0]) - (86400*7)
+prepare_path()
 s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
 print df.show(36,False)
 dfnew = df.repartition(36)
-listfullkeys = dfnew.rdd.map(lambda x:listkeys(x))
+listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
