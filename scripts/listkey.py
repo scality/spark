@@ -13,6 +13,7 @@ from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
 from scality.key import Key
 from scality.storelib.storeutils import uks_parse
 
+
 import yaml
 
 import ssl
@@ -28,7 +29,8 @@ else:
 RING = sys.argv[1]
 spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING).getOrCreate()
 
-with open("./config/config.yml", 'r') as ymlfile:
+config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 user = cfg["sup"]["login"]

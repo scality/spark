@@ -5,7 +5,8 @@ import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
-with open("./config/config.yml", 'r') as ymlfile:
+config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 

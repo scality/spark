@@ -8,7 +8,8 @@ from pyspark import SparkContext
 
 from scality.key import Key
 
-with open("./config/config.yml", 'r') as ymlfile:
+config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 

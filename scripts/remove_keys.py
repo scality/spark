@@ -27,7 +27,9 @@ RING = sys.argv[1]
 
 spark = SparkSession.builder.appName("Removes Keys ring:"+RING).getOrCreate()
 
-with open("./config/config.yml", 'r') as ymlfile:
+
+config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 user = cfg["sup"]["login"]
