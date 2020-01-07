@@ -9,8 +9,8 @@ The documentation will be provided soon
 
 ### Untar it into any directory
 
-  > # cd /root 
-  > #tar xzf spark_env.tgz
+> # cd /root 
+> #tar xzf spark_env.tgz
 
 ### Active the virtual env
 
