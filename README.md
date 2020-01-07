@@ -81,7 +81,7 @@ sup:
 
 ### Edit the srebuildd config file accordingly or keep 
 ### Add a chord driver needed to clean the ARC orphan keys
-#### Copy the ring_driverO to ring_driver1
+#### Copy the ring_driver0 to ring_driver1
 
 ```
     },
