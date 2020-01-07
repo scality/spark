@@ -6,6 +6,9 @@ The documentation will be provided soon
 # Single local spark Deployment
 
 ## Requirements
+
+* The RING should be in a stable state prior running all of this meaning all the nodes/servers should be present up and running.
+
 We do recommend to run the local instance on the supervisor and adjust accordingly the configuration settings.
 
 * Memory/cores requirements
