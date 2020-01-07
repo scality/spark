@@ -196,8 +196,12 @@ Output:
 +---+-------------------+
 ```
 
-# Check the coherence of all the sproxyd/split files on the RING making sure all the subpart are present ( DailyMotion use-case )
+# Check the coherence of all the sproxyd/split files.
+
+The idea is making sure all the subpart are present ( DailyMotion use-case ).
+
 This may as well be the baseline for checking the consistency of all the sfused/S3 files as well.
+
 We may even call it an ***application-fsck***.
 
 > Documentation will be updated soon.
