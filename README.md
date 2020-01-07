@@ -67,7 +67,7 @@ For **261622847** keys it takes:
 
 ### Clone the spark script repository
 ```
-#git clone http://bitbucket.org/scality-patrick/spark
+#git clone http://bitbucket.org/scality/spark
 ```
 
 ### Modify the config.yml and set the credentials
