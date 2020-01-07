@@ -2,7 +2,7 @@ master: ""
 ring: "DATA"
 path: "/fs/spark/"
 srebuildd_ip: "127.0.0.1"
-srebuildd_path: "/proxy/chord"
+srebuildd_path: "/rebuild/chord"
 s3:
   access_key: ""
   secret_key: ""
