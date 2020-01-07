@@ -78,3 +78,32 @@ sup:
 ```
 #cat /fs/output/output-spark-ARCORPHAN-CORRUPTED-DATA.csv/*
 ```
+
+### Edit the srebuildd config file accordingly or keep 
+### Add a chord driver needed to clean the ARC orphan keys
+#### Copy the ring_driverO to ring_driver1
+
+```
+    },
+    "ring_driver:0": {
+        "alias": "arcdata",
+        "bstraplist": "178.33.63.219:4249",
+        "get_reconstruct_buffer_size": "1048576",
+        "ring": "IT",
+        "type": "arcdata"
+    },
+```
+```
+    },
+    "ring_driver:1": {
+        "alias": "chord",
+        "bstraplist": "178.33.63.219:4249",
+        "ring": "IT",
+        "type": "chord"
+    },
+```
+
+#### Restart the srebuildd connector
+```
+systemctl restart scality-srebuildd
+```
