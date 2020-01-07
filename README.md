@@ -168,8 +168,8 @@ systemctl restart scality-srebuildd
 #/root/spark_env/bin/python /root/spark/scripts/count-flag.py DATA
 ```
 Output:
-``
-`+---+----------+
+```
++---+----------+
 |_c3|count(_c1)|
 +---+----------+
 | 16|   4403504|
@@ -180,6 +180,7 @@ Output:
 ```
 
 # Count the number of uniq Keys per flag
+
 ```
 #/root/spark_env/bin/python /root/spark/scripts/count-flag-uniq.py DATA
 ```
