@@ -40,7 +40,10 @@ cpath = cfg["path"]
 path = "%s/listkeys-%s.csv/" % (cpath, RING)
 
 def prepare_path():
-	shutil.rmtree(path)
+	try:
+		shutil.rmtree(path)
+	except:
+		pass
 	if not os.path.exists(path):
 		os.makedirs(path)
 	
