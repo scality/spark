@@ -7,9 +7,12 @@ The documentation will be provided soon
 
 ## Requirements
 We do recommend to run the local instance on the supervisor and adjust accordingly the configuration settings.
+
 * Memory/cores requirements
-* The more memory/cores you have the fast it is to do the MapReduce but the following should be safe 
+
+The more memory/cores you have the faster it is to process the MapReduce but the following should be safe.
 Please adjust it accordingly into the config/config.yml file.
+
 ```
 spark.executor.cores: 2
 spark.executor.instances: 2
@@ -30,7 +33,7 @@ Storage stats:
  Objects: 261622847
 ```
 
-For 261622847 keys it takes:
+For **261622847** keys it takes:
 ```
 261622847*90 = 23546056230bytes ~ 23546056230/1024 = 22994195 = 23546056230/1024/1024/1024 ~ 21GB
 ```
