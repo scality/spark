@@ -13,7 +13,7 @@ parser.add_option("-x", "--extra", dest="extra",
    default='', help="Extra parameter")
 (options, args) = parser.parse_args()
 
-with open("./config.yml", 'r') as ymlfile:
+with open("./config/config.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 script=options.script

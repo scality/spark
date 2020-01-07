@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 
 
-with open("./config.yml", 'r') as ymlfile:
+with open("./config/config.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 
