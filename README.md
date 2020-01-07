@@ -107,3 +107,8 @@ sup:
 ```
 systemctl restart scality-srebuildd
 ```
+
+### Remove the orphans **Don't run it just yet I still need to put some safe-guard before**
+```
+#/root/spark_env/bin/python /root/spark/scripts/orphan/remove_orphans.py DATA
+```
