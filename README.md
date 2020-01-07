@@ -70,7 +70,7 @@ For **261622847** keys it takes:
 #git clone http://bitbucket.org/scality-patrick/spark
 ```
 
-### Modify the config.yml and set the correct creds/IPs
+### Modify the config.yml and set the credentials
 ```
 #cd /root/
 #cp spark/scripts/config/config-template.yml spark/scripts/config/config.yml
@@ -78,7 +78,7 @@ For **261622847** keys it takes:
 
 ### Edit the config
 
-#### Set the correct internal SUP password 
+#### Set the correct internal SUP password and well as the supervisor IP if the script is entented to run on a remote location
 ```
 sup:
  url: "https://127.0.0.1:2443"
@@ -86,51 +86,51 @@ sup:
  password: ""
 ```
 
-### And set a srebuildd IP
+### Specify any srebuildd IP
 ```
   srebuildd_ip: "127.0.0.1"
 ```
 
-### Create the local directory to save the listkeys/script outputs
+### Create the local directory to save the listkeys as well as the outputs for the scripts
 ```
 #mkdir -p /fs/spark/
 ```
 
-### Run a listkeys against the DATA RING
+### Run a full listkeys of the DATA RING
 ```
 #/root/spark_env/bin/python /root/spark/scripts/listkey.py DATA
 ```
 
-### Check if all the listkeys are there
+### Make sure all the listkeys are present ( you should get as many files as ring nodes)
 ```
 #ls /fs/spark/listkeys-DATA.csv/*
 ```
 
 
-# Check/Removal Orphans
+# Check/Removal Orphans set of scripts
 
 ### Run the check orphan script
 ```
 #/root/spark_env/bin/python /root/spark/scripts/orphan/check_orphan.py DATA
 ```
 
-### Print the list of potential orphans Keys
+### Print the list of potential orphan Keys
 ```
 #cat /fs/output/output-spark-ARCORPHAN-DATA.csv/*
 ```
 
-### Report the list of real corrupted ARC chunks
+### Report the list of real corrupted ARC keys
 ```
 #/root/spark_env/bin/python /root/spark/scripts/orphan/check_orphan_corrupted.py DATA
 ```
 
-### Print the list of corrupted orphans Keys
+### Print the list of corrupted orphan Keys
 ```
 #cat /fs/output/output-spark-ARCORPHAN-CORRUPTED-DATA.csv/*
 ```
 
-### Edit the srebuildd config file accordingly or keep 
-### Add a chord driver needed to clean the ARC orphan keys
+### Edit the srebuildd config file accordingly 
+### Add a chord driver needed to allow the script to delete the ARC orphan keys
 #### Copy the ring_driver0 to ring_driver1
 
 ```
@@ -163,7 +163,7 @@ systemctl restart scality-srebuildd
 #/root/spark_env/bin/python /root/spark/scripts/orphan/remove_orphans.py DATA
 ```
 
-# Count the number of Keys per flag
+# Count the number of keys per flag
 ```
 #/root/spark_env/bin/python /root/spark/scripts/count-flag.py DATA
 ```
@@ -179,7 +179,7 @@ Output:
 +---+----------+
 ```
 
-# Count the number of uniq Keys per flag
+# Count the number of uniq keys per flag
 
 ```
 #/root/spark_env/bin/python /root/spark/scripts/count-flag-uniq.py DATA
@@ -199,9 +199,9 @@ Output:
 
 # Check the coherence of all the sproxyd/split files.
 
-The idea is making sure all the subpart are present ( DailyMotion use-case ).
+The idea is making sure all the subpart are present ( DailyMotion use-case ) as such the sproxyd/split file can be retrieved
 
-This may as well be the baseline for checking the consistency of all the sfused/S3 files as well.
+This may as well be the baseline to allow us to do a full consistency check of all the sfused/S3 objects as well.
 
 We may even call it an ***application-fsck***.
 
