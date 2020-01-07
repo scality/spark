@@ -107,7 +107,7 @@ sup:
 ```
 
 
-#### Check/Removal Orphans
+# Check/Removal Orphans
 
 ### Run the check orphan script
 ```
@@ -162,3 +162,43 @@ systemctl restart scality-srebuildd
 ```
 #/root/spark_env/bin/python /root/spark/scripts/orphan/remove_orphans.py DATA
 ```
+
+# Count the number of Keys per flag
+```
+#/root/spark_env/bin/python /root/spark/scripts/count-flag.py DATA
+```
+Output:
+``
+`+---+----------+
+|_c3|count(_c1)|
++---+----------+
+| 16|   4403504|
+| 48|       252|
+| 32|    177258|
+|  0| 253136044|
++---+----------+
+```
+
+# Count the number of uniq Keys per flag
+```
+#/root/spark_env/bin/python /root/spark/scripts/count-flag-uniq.py DATA
+```
+
+Output:
+```
++---+-------------------+
+|_c3|count(DISTINCT _c1)|
++---+-------------------+
+| 16|            1046962|
+| 48|                 84|
+| 32|              59085|
+|  0|           61031785|
++---+-------------------+
+```
+
+# Check the coherence of all the sproxyd/split files on the RING making sure all the subpart are present ( DailyMotion use-case )
+This may as well be the baseline for checking the consistency of all the sfused/S3 files as well.
+We may even call it an ***application-fsck***.
+
+> Documentation will be updated soon.
+
