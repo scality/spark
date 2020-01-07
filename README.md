@@ -89,7 +89,7 @@ sup:
         "alias": "arcdata",
         "bstraplist": "178.33.63.219:4249",
         "get_reconstruct_buffer_size": "1048576",
-        "ring": "IT",
+        "ring": "DATA",
         "type": "arcdata"
     },
 ```
@@ -98,7 +98,7 @@ sup:
     "ring_driver:1": {
         "alias": "chord",
         "bstraplist": "178.33.63.219:4249",
-        "ring": "IT",
+        "ring": "DATA",
         "type": "chord"
     },
 ```
