@@ -42,6 +42,10 @@ For **261622847** keys it takes:
 [root@node01 spark]# du  /fs/spark/listkeys-IT.csv/
 22388738	/fs/spark/listkeys-IT.csv/
 ```
+```
+[root@node01 spark]# du  /fs/spark/listkeys-IT.csv/ -sh
+22G	/fs/spark/listkeys-IT.csv/
+```
 
 
 ## Deploy the Spark Virtual env
