@@ -54,6 +54,7 @@ For **261622847** keys it takes:
 ## Deploy the Spark Virtual env
 **http://packages.scality.com/extras/centos/7Server/x86_64/scality/spark_env.tgz**
 
+
 ### Untar it into any directory
 ```
 #cd /root 
@@ -68,6 +69,11 @@ For **261622847** keys it takes:
 ### Clone the spark script repository
 ```
 #git clone http://bitbucket.org/scality/spark
+```
+
+### Or Download the latest tarball
+```
+https://bitbucket.org/scality/spark/downloads/
 ```
 
 ### Modify the config.yml and set the credentials
