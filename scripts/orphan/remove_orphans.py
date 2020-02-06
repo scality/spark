@@ -23,7 +23,16 @@ srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_path  = cfg["srebuildd_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
 
-spark = SparkSession.builder.appName("Remove Orphans ring:"+RING).getOrCreate()
+spark = SparkSession.builder \
+     .appName("Remove Orphans ring:"+RING) \
+     .config("spark.executor.instances", cfg["spark.executor.instances"]) \
+     .config("spark.executor.memory", cfg["spark.executor.memory"]) \
+     .config("spark.executor.cores", cfg["spark.executor.cores"]) \
+     .config("spark.driver.memory", cfg["spark.driver.memory"]) \
+     .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
+     .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", cfg["path"]) \
+     .getOrCreate()
 
 def deletekey(row):
 	key = row._c0
@@ -38,4 +47,12 @@ df = spark.read.format("csv").option("header", "false").option("inferSchema", "t
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
 deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-%s.csv" % (PATH, RING)
+rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
+
+
+filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-BUT-OK-LAST-%s.csv" % (PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
+rdd = df.rdd.map(deletekey).toDF()
+rdd.show(10,False)
+deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-SINGLE-%s.csv" % (PATH, RING)
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)

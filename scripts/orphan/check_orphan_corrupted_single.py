@@ -30,6 +30,7 @@ spark = SparkSession.builder \
      .config("spark.driver.memory", cfg["spark.driver.memory"]) \
      .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
 
 

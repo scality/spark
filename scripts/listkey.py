@@ -62,7 +62,8 @@ def listkeys(row, now):
 			print >> f , data
 	return [( row.ip, row.adminport, 'OK')]
 
-now = int(str(time.time()).split('.')[0]) - (86400*7)
+#now = int(str(time.time()).split('.')[0]) - (86400*7)
+now = int(str(time.time()).split('.')[0]) - (3600*2)
 prepare_path()
 s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])

@@ -28,6 +28,7 @@ spark = SparkSession.builder \
      .config("spark.driver.memory", cfg["spark.driver.memory"]) \
      .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
 
 def getarcid(row):
@@ -40,6 +41,8 @@ def getarcid(row):
 		return (key,"OK")
 	    elif r.status_code == 422:
 		return (key,"CORRUPTED")
+	    elif r.status_code == 404:
+		return (key,"NOTFOUND")
 	    else:
 		return(key,"UNKNOWN|RING_FAILURE|SREBUILDD_DOWN")
     except requests.exceptions.ConnectionError as e:
