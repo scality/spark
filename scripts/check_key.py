@@ -21,9 +21,14 @@ PATH = cfg["path"]
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_path  = cfg["srebuildd_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 spark = SparkSession.builder \
      .appName("Check ring keys:"+RING) \
+     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
+     .config("spark.hadoop.fs.s3a.access.key", cfg["s3"]["access_key"])\
+     .config("spark.hadoop.fs.s3a.secret.key", cfg["s3"]["secret_key"])\
+     .config("spark.hadoop.fs.s3a.endpoint", cfg["s3"]["endpoint"])\
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -46,8 +51,10 @@ def headkey(row):
         return (key,"ERROR_HTTP")
 
 
-filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-CORRUPTED-%s.csv" % (PATH, RING)
+#filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-CORRUPTED-%s.csv" % (PATH, RING)
+filenamearc = "s3a://spark/listkeys.csv/*"
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
+df.show(10)
 rdd = df.rdd.map(headkey).toDF()
 rdd.show(10,False)
 
