@@ -37,6 +37,7 @@ user = cfg["sup"]["login"]
 password = cfg["sup"]["password"]
 url = cfg["sup"]["url"]
 cpath = cfg["path"]
+retention = cfg.get("retention",86400*7)
 path = "%s/listkeys-%s.csv/" % (cpath, RING)
 
 def prepare_path():
@@ -62,8 +63,7 @@ def listkeys(row, now):
 			print >> f , data
 	return [( row.ip, row.adminport, 'OK')]
 
-#now = int(str(time.time()).split('.')[0]) - (86400*7)
-now = int(str(time.time()).split('.')[0]) - (3600*2)
+now = int(str(time.time()).split('.')[0]) - retention
 prepare_path()
 s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])

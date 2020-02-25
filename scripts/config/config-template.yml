@@ -1,6 +1,7 @@
 master: ""
 ring: "DATA"
 path: "/fs/spark/"
+protocol: file
 srebuildd_ip: "127.0.0.1"
 srebuildd_path: "/rebuild/chord"
 retention: 86400*7

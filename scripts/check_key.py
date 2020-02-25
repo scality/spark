@@ -18,6 +18,8 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROT = cfg["protocol"]
+
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_path  = cfg["srebuildd_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
@@ -51,10 +53,9 @@ def headkey(row):
         return (key,"ERROR_HTTP")
 
 
-#filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-CORRUPTED-%s.csv" % (PATH, RING)
-filenamearc = "s3a://spark/listkeys.csv/*"
+filenamearc = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
-df.show(10)
+df.show(10,False)
 rdd = df.rdd.map(headkey).toDF()
 rdd.show(10,False)
 
