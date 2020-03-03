@@ -20,8 +20,7 @@ with open(config_path, 'r') as ymlfile:
 script=options.script
 opt=options.ring
 opt2=options.extra
-#localdir = "%s/tmp/" % cfg['path']
-localdir = "/tmp/"
+localdir = "%s/tmp/" % "/var"
 
 cmd = "./spark-2.4.3-bin-hadoop2.7/bin/spark-submit --master %s \
         --driver-memory=10g \
@@ -35,8 +34,8 @@ cmd = "./spark-2.4.3-bin-hadoop2.7/bin/spark-submit --master %s \
         --conf spark.worker.cleanup.appDataTtl=604800 \
 	--conf spark.hadoop.fs.s3a.endpoint=%s \
 	--conf spark.local.dir=%s \
-        --jars file:/root/spark/aws-java-sdk-1.7.4.jar,file:/root/spark/hadoop-aws-2.7.3.jar,file:/root/spark/alluxio-2.1.0-client.jar \
-        --driver-class-path=/root/spark/aws-java-sdk-1.7.4.jar:/root/spark/hadoop-aws-2.7.3.jar:/root/spark/alluxio-2.1.0-client.jar \
+        --jars file:/root/spark/aws-java-sdk-1.7.4.jar,file:/root/spark/hadoop-aws-2.7.3.jar \
+        --driver-class-path=/root/spark/aws-java-sdk-1.7.4.jar:/root/spark/hadoop-aws-2.7.3.jar \
 	./%s %s %s" % ( cfg["master"], cfg["s3"]["access_key"] , cfg["s3"]["secret_key"] , cfg["s3"]["endpoint"] , localdir, script , opt, opt2 )
 
 os.system(cmd)
