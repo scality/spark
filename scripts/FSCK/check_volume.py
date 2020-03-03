@@ -4,7 +4,7 @@ from pyspark import SparkContext
 import sys
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0] ,"./config/config.yml")
+config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -18,12 +18,12 @@ PATH = cfg["path"]
 
 def hex_to_dec(row):
         key = row._c1
-	hex = key[25:30]
-	dec = int(key[25:30],16)
-	return (key,hex,dec)
+	hex = key[24:30]
+	dec = long(hex,16)
+	return {'key':key,"hex":hex,"devID":dec}
 
 spark = SparkSession.builder \
-     .appName("Count flags ring::"+RING) \
+     .appName("Return Volumes ring::"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -41,4 +41,4 @@ df = df.groupBy("_c1").count()
 volume = df.rdd.map(hex_to_dec)
 volumes = volume.toDF()
 
-print volumes.show(100,False)
+print volumes.show(1000,False)
