@@ -79,6 +79,7 @@ def gen_sparse_opts(confpath, sparse_ino_mode=None, compat=False):
         'page_cos':     '-p',
         'stripe_cos':   '-C',
         'stripe_size':  '-s',
+	'retry_timeout':'-r',
     }
 
     for (k, opt) in opt_map.items():
