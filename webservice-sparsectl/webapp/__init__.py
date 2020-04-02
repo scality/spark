@@ -11,16 +11,17 @@ app.secret_key = os.urandom(12)
 
 @app.route('/sparse/<key>')
 def home(key):
-	search = re.compile('[A-F0-9].20$')
+	search = re.compile(r'stripe.*key.*([A-F0-9].20$)')
 	search_err = re.compile('(err=.*|SCAL_SPARSE.*)')
 	listkey = []
 	cmd = "python /home/website/bin/sparsecmd.py --conf /home/website/bin/sfused.conf dump %s" % key
 	p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 	stdout, stderr = p.communicate()
-	retkey  = stdout.split()
+	retkey  = stdout.split('\n')
 	for i in retkey:
 		if search.search(i):
-			listkey.append(i)
+			key = i.split()[3]
+			listkey.append(key)
 	if stderr:
 		err = search_err.search(stderr).group(0)
 		listkey=[err]
