@@ -11,6 +11,11 @@ app.secret_key = os.urandom(12)
 
 @app.route('/sparse/<key>')
 def home(key):
+	page = request.args.get('option', default = False, type = str)
+	try:
+		key = "%x" % int(key)
+	except ValueError:
+		pass
 	search = re.compile(r'stripe.*key.*([A-F0-9].20$)')
 	search_err = re.compile('(err=.*|SCAL_SPARSE.*)')
 	listkey = []
@@ -18,6 +23,11 @@ def home(key):
 	p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 	stdout, stderr = p.communicate()
 	retkey  = stdout.split('\n')
+
+	if page == "full":
+		if stderr:	return json.dumps(stderr)
+		else:		return json.dumps(retkey)
+
 	for i in retkey:
 		if search.search(i):
 			key = i.split()[3]
