@@ -70,7 +70,6 @@ df = spark.read.format("csv").option("header", "false").option("inferSchema", "t
 df = df.filter( df["_c1"].rlike(r".*0801000040$") )
 df = df.groupBy("_c1").count()
 df.show(20,False)
-print((df.count(), len(df.columns)))
 sparse = df.rdd.map(hex_to_dec)
 schema = StructType([
  	StructField("dec", StringType(), False),
