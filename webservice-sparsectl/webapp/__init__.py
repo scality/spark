@@ -1,21 +1,31 @@
-from flask import Flask, render_template, redirect, url_for, request, session, Response
+from flask import Flask, render_template, redirect, url_for, request, session, Response, g
 import datetime
 import time
 import re
 import json
 import os
+import logging
+from twisted.logger import Logger
 from subprocess import Popen, PIPE, STDOUT
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
+logger = Logger()
+
+@app.before_request
+def before_request():
+    g.request_start_time = time.time()
+    g.request_time = lambda: "%dms" % ( int( (time.time() - g.request_start_time)*1000))
 
 @app.route('/sparse/<key>')
 def home(key):
+
 	page = request.args.get('option', default = False, type = str)
-	try:
+	full = request.args.get('full', default = False, type = str)
+	if page == "key":
+		key = key[6:22]
+	elif page == "inode":
 		key = "%x" % int(key)
-	except ValueError:
-		pass
 	search = re.compile(r'stripe.*key.*([A-F0-9].20$)')
 	search_err = re.compile('(err=.*|SCAL_SPARSE.*)')
 	listkey = []
@@ -24,7 +34,7 @@ def home(key):
 	stdout, stderr = p.communicate()
 	retkey  = stdout.split('\n')
 
-	if page == "full":
+	if full:
 		if stderr:	return json.dumps(stderr)
 		else:		return json.dumps(retkey)
 
@@ -38,4 +48,12 @@ def home(key):
 	if len(listkey) == 0:
 		listkey=["empty"]
 	return json.dumps(listkey)
+
+@app.after_request
+def after_request(response):
+    logger.info(
+	"{method} {uri} {status} {time}"
+	.format(method=request.method, uri=request.path, status=response.status, time=g.request_time())
+	)
+    return response
 
