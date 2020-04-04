@@ -18,6 +18,8 @@ else:
 
 PATH = cfg["path"]
 
+req_s = requests.Session()
+
 spark = SparkSession.builder \
      .appName("Check SPARSE FILES:"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
@@ -41,7 +43,9 @@ def blob(row):
 	key = row.hex
 	try:
 		try:
-			r = requests.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=150)
+			req_s = requests.Session()
+			r = req_s.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=600)
+			#r = requests.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=600)
 			if r.status_code == 200:
 				rtlst = []
 				payload = json.loads(r.text)
@@ -64,6 +68,9 @@ def blob(row):
 files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.filter( df["_c1"].rlike(r".*0801000040$") )
+df = df.groupBy("_c1").count()
+df.show(20,False)
+print((df.count(), len(df.columns)))
 sparse = df.rdd.map(hex_to_dec)
 schema = StructType([
  	StructField("dec", StringType(), False),
