@@ -40,26 +40,30 @@ def blob(row):
 	mainkey = row.key
 	key = row.hex
 	try:
-		r = requests.get('http://127.0.0.1:9999/sparse/'+str(key))
-		if r.status_code == 200:
-			rtlst = []
-			payload = json.loads(r.text)
-			if "SCAL" in payload[0] or "empty" in payload[0]:
-				rtlst.append({"key":mainkey,"subkey":payload[0]})
+		try:
+			r = requests.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=150)
+			if r.status_code == 200:
+				rtlst = []
+				payload = json.loads(r.text)
+				if "SCAL" in payload[0] or "empty" in payload[0]:
+					rtlst.append({"key":mainkey,"subkey":payload[0]})
+					return rtlst
+				for k in payload:
+					rtlst.append({"key":mainkey,"subkey":k.zfill(40)})
 				return rtlst
-			for k in payload:
-				rtlst.append({"key":mainkey,"subkey":k.zfill(40)})
-			return rtlst
-		else:
-			return [{"key":mainkey,"subkey":"KO"}]
+			else:
+				return [{"key":mainkey,"subkey":"KO"}]
+		except requests.exceptions.Timeout:
+			return [{"key":mainkey,"subkey":"REQUEST_TIMEOUT"}]
+		except requests.exceptions.RequestException as e:
+			return [{"key":mainkey,"subkey":"REQUEST_ERROR"}]
 
-	except requests.exceptions.ConnectionError as e:
-		return [{"key":mainkey,"subkey":"KO_HTTP"}]
+	except Exception as e:
+		return [{"key":mainkey,"subkey":"KO"}]
 
 files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.filter( df["_c1"].rlike(r".*0801000040$") )
-df = df.groupBy("_c1").count()
 sparse = df.rdd.map(hex_to_dec)
 schema = StructType([
  	StructField("dec", StringType(), False),
@@ -68,8 +72,8 @@ schema = StructType([
 )
 #sparse = sparse.toDF(schema)
 sparse = sparse.toDF()
-
 print sparse.show(10,False)
+
 sparse_subkey = sparse.rdd.map(lambda x : blob(x))
 sparse_subkey = sparse_subkey.flatMap(lambda x: x).toDF()
 sparse_subkey.show(10,False)
