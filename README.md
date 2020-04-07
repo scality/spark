@@ -76,7 +76,7 @@ For **261622847** keys it takes:
 https://bitbucket.org/scality/spark/downloads/
 ```
 
-### Links to spark scritps
+### Links to spark scripts Documentation
 
 #### [Some Scripts](scripts/README.md)
 
