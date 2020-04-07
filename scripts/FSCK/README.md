@@ -221,7 +221,7 @@ Start the new bizstorenode on all the nodes
 +-----+------+----------------------------------------+
 ```
 
-### Create an sfused config with all the dev volumes 
+### Create an sfused config for each volumes ID 
 
 The META ring driver should point to the new META RING.
 The DATA ring driver should point to a local ring driver to avoid any retries and responds 404 directly.
