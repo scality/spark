@@ -34,7 +34,7 @@ This loop could be used to avoid untar the empty directories.
 ```
 
 
-###Script to create the new bizobj start command
+### Script to create the new bizobj start command
 
 ```
 find /ring/fs/Procedures/$(hostname) -type d -name "ssd*"  |  sed 's/\(.*\)/biziod -N HI -P "bp=\1"/' > /tmp/l
