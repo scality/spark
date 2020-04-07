@@ -36,7 +36,7 @@ def getarcid(row):
     header = {}
     header['x-scal-split-policy'] = "raw"
     try:
-	    r = requests.head(srebuildd_url+str(key.zfill(40)),timeout=10)
+	    r = requests.head(srebuildd_url+str(key.zfill(40)),timeout=300)
 	    if r.status_code == 200:
 		return (key,"OK")
 	    elif r.status_code == 422:
