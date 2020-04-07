@@ -8,13 +8,31 @@ import requests
 import binascii
 import hashlib
 import base64
+import yaml
 
-spark = SparkSession.builder.appName("Check Split Objects P1").getOrCreate()
+config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+with open(config_path, 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+if len(sys.argv) >1:
+	RING = sys.argv[1]
+else:
+	RING = cfg["ring"]
+
+PATH = cfg["path"]
 
 
-RING = "IT"
+spark = SparkSession.builder \
+     .appName("DIG ARC Stripes objects:"+RING) \
+     .config("spark.executor.instances", cfg["spark.executor.instances"]) \
+     .config("spark.executor.memory", cfg["spark.executor.memory"]) \
+     .config("spark.executor.cores", cfg["spark.executor.cores"]) \
+     .config("spark.driver.memory", cfg["spark.driver.memory"]) \
+     .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
+     .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", cfg["path"]) \
+     .getOrCreate()
 
-RING = sys.argv[1]
 
 def to_bytes(h):
         return binascii.unhexlify(h)
@@ -36,7 +54,7 @@ def get_dig_key(name):
       oid = oid.zfill(16)
       volid = "00000000"
       svcid = "51"
-      specific = "102060" #Make sure to change it when the ARC schema changes
+      specific = "144090"
       cls = "70"
       key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
       return key.zfill(40)
@@ -63,7 +81,7 @@ def dig(row):
 	return [{"key":key,"subkey":subkey ,"arckey": arckey}]
 
 
-files = "file:///fs/spark/output/output-sofs-files-%s.csv" % RING
+files = "file:///%s/output/output-sofs-files-%s.csv" % (PATH,RING)
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
 
 df.show(10,False)
@@ -71,6 +89,6 @@ rdd = df.rdd.map(lambda x : dig(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 print dfnew.show(20,False)
 
-single = "file:///fs/spark/output/output-sofs-files-ARC-%s.csv" % RING
+single = "file:///%s/output/output-sofs-files-DIG-%s.csv" % (PATH,RING)
 dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
 

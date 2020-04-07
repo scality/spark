@@ -18,7 +18,6 @@ else:
 
 PATH = cfg["path"]
 
-req_s = requests.Session()
 
 spark = SparkSession.builder \
      .appName("Check SPARSE FILES:"+RING) \
@@ -44,7 +43,7 @@ def blob(row):
 	try:
 		try:
 			req_s = requests.Session()
-			r = req_s.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=600)
+			r = req_s.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=6000)
 			#r = requests.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=600)
 			if r.status_code == 200:
 				rtlst = []
