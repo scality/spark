@@ -76,3 +76,12 @@ For **261622847** keys it takes:
 https://bitbucket.org/scality/spark/downloads/
 ```
 
+### Links to spark scritps
+
+#### [Some Scritps](scripts/README.md)
+
+#### [Check Orphan/Removal](scripts/orphan/README.md)
+
+#### [SOFS file-system consistency check](scripts/FSCK/README.md)
+
+
