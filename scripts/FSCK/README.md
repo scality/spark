@@ -19,7 +19,7 @@ In the long term we may implement a distributed-lock-mechanism to make sure the 
 #salt -G 'roles:ROLE_STORE' cmd.run "for ssd in $(biziodisks | grep ssd); do find /scality/\$ssd/META -type f | tar czf /scality/\$ssd/\$(hostname)-\$ssd.tar -T  - & done"
 ```
 
-###Duplicate the META RING 
+### Duplicate the META RING 
 
 Untar the bizobj to a location where there's enough space.
 I'd recommend untaring it into a SOFS dedicated volume since the processing will require a lot of disk space.
@@ -54,7 +54,7 @@ Start the bizobjs on all the nodes
 #salt -G 'roles:ROLE_STORE' cmd.run "sh /ring/fs/Procedures/start-final-2-\$(hostname).sh"
 ``` 
 
-###Create the bizobj conf files
+### Create the bizobj conf files
 
 create-biz-dir.sh
 ```
@@ -65,7 +65,7 @@ cat /ring/fs/Procedures/start-final-2-$(hostname).sh | awk '{print $3}'| xargs -
 #salt -G 'roles:ROLE_STORE' cmd.run "sh /ring/fs/Procedures/create-biz-dir.sh"
 ```
 
-###Create a new biziod to migrate the objects to 
+### Create a new biziod to migrate the objects to 
 
 start-biz.sh
 ```
@@ -78,7 +78,7 @@ bizioopen -c -N TEMP bizobj://META:0
 #salt -G 'roles:ROLE_STORE' cmd.run "sh /ring/fs/Procedures/start-biz.sh"
 ```
 
-###Generate a list of files to be migrated
+### Generate a list of files to be migrated
 
 mig.sh
 ```
@@ -100,7 +100,7 @@ done  > /ring/fs/Procedures/list-$(hostname).txt
 #salt -G 'roles:ROLE_STORE' cmd.run "sh /ring/fs/Procedures/mig.sh"
 ```
 
-###Run the migration
+### Run the migration
 
 run-mig.sh
 ```
@@ -167,8 +167,9 @@ Modify the IP
 ```
 
 Add the biziod to the list of disk
-# /etc/scality/node-rtl/confdb/msgstorenodecfg.xml
+
 ```
+#/etc/scality/node-rtl/confdb/msgstorenodecfg.xml
       <name>bizionames</name>
       <val>
         <name>bizioname</name>
@@ -191,7 +192,7 @@ Start the new bizstorenode on all the nodes
 ```
 
 
-###Join the nodes to the new META RING  
+### Join the nodes to the new META RING  
 
 ### Run a full listkeys of the new META RING
 ```
