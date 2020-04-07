@@ -194,6 +194,8 @@ Start the new bizstorenode on all the nodes
 
 ### Join the nodes to the new META RING  
 
+![picture](img/ring.png)
+
 ### Run a full listkeys of the new META RING
 ```
 #/root/spark_env/bin/python /root/spark/scripts/listkey.py META
