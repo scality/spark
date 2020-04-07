@@ -437,8 +437,9 @@ ie.
 #/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p0.py DATA
 ```
 
-### Move the result to META for we keep the same path
+### Move the result to a new dir so we keep the same path
 ```
+mv /ring/fs/output/output-sparse-ARC-FILES-DATA.csv /ring/fs/output/output-sparse-ARC-FILES-META.csv
 
 ```
 
