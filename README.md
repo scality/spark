@@ -78,7 +78,7 @@ https://bitbucket.org/scality/spark/downloads/
 
 ### Links to spark scritps
 
-#### [Some Scritps](scripts/README.md)
+#### [Some Scripts](scripts/README.md)
 
 #### [Check Orphan/Removal](scripts/orphan/README.md)
 
