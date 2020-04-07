@@ -104,7 +104,7 @@ done  > /ring/fs/Procedures/list-$(hostname).txt
 
 run-mig.sh
 ```
-for i in $(ls /ring/fs/Procedures/$(hostname)); do cat /ring/fs/Procedures/$(hostname)/$i | sh  & done
+cat /ring/fs/Procedures/list-$(hostname).txt | sh
 ```
 
 ```
