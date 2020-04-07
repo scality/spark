@@ -16,6 +16,11 @@ RING = "IT"
 
 RING = sys.argv[1]
 
+
+def pad2(n):
+  x = '%s' % (n,)
+  return ('0' * (len(x) % 2)) + x
+
 def to_bytes(h):
         return binascii.unhexlify(h)
 
@@ -42,6 +47,8 @@ def get_dig_key(name):
       return key.zfill(40)
 
 def gen_md5_from_id(key):
+	key = key.lstrip('0')
+        key = pad2(key)
         int_b = to_bytes(key)
         return get_dig_key(int_b)
 
