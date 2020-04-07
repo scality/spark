@@ -20,6 +20,16 @@ def err(msg):
 def section_num(s):
     return int(s.split(':')[1])
 
+def mini_conf(section, prefix=''):
+    return ';'.join(prefix + '%s=%s'%(k, str(v)) for (k,v) in section.items() )
+
+def conf_get_bool(conf, section, param, default=False):
+    try:
+        p = conf[section][param]
+        return not (p in ['false', '0', 0])
+    except KeyError:
+        return default
+
 def sections_by_num(conf, pattern):
     return dict((section_num(s), conf[s]) for s in conf.keys() if re.match(pattern, s))
 
@@ -86,6 +96,16 @@ def gen_sparse_opts(confpath, sparse_ino_mode=None, compat=False):
         if k in sparse_section:
             sparse_opts += [opt, str(sparse_section[k])]
 
+    # use dlm if enabled
+    
+    if conf_get_bool(conf, 'dlm', 'enable', False):
+	dev = conf['general']['dev']
+        sparse_opts += ['-D',str(dev)]
+        if 'rpc_address_selector' in conf['dlm']:
+            # guess we're running RING >= 8
+            dlm_conf_str = mini_conf(conf['dlm'])
+            sparse_opts += ['--dlm-conf', dlm_conf_str]
+
     return sparse_opts
 
 def main():
@@ -113,11 +133,11 @@ def main():
     cmd = ['/home/website/bin/sparsectl'] + gen_sparse_opts(args.conf, args.ino_mode, args.compat) + args.args
 
     if args.verbose:
-        print 'command:' + ' '.join(map(lambda s: "'%s'" % s, cmd))
+	print 'command:' + ' '.join(map(lambda s: "'%s'" % s, cmd))
     if args.dry_run:
         ret = 0
     else:
-        ret = os.spawnvp(os.P_WAIT, cmd[0], cmd)
+	ret = os.spawnvp(os.P_WAIT, cmd[0], cmd)
     sys.exit(ret)
 
 if __name__ == '__main__':

@@ -27,24 +27,26 @@ def home(key):
 	elif page == "inode":
 		key = "%x" % int(key)
 	search = re.compile(r'stripe.*key.*([A-F0-9].20$)')
-	search_err = re.compile('(err=.*|SCAL_SPARSE.*)')
+	search_err = re.compile(r'(err=.*|SCAL_SPARSE.*)')
 	listkey = []
-	cmd = "python /home/website/bin/sparsecmd.py --conf /home/website/bin/sfused.conf dump %s" % key
+	cmd = "python /home/website/bin/sparsecmd.py  --conf /home/website/bin/sfused.conf dump %s" % key
 	p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 	stdout, stderr = p.communicate()
 	retkey  = stdout.split('\n')
+	reterr = stderr.split()
 
 	if full:
-		if stderr:	return json.dumps(stderr)
-		else:		return json.dumps(retkey)
+		return json.dumps(''.join(retkey))
 
 	for i in retkey:
 		if search.search(i):
 			key = i.split()[3]
 			listkey.append(key)
-	if stderr:
-		err = search_err.search(stderr).group(0)
-		listkey=[err]
+
+	ss = search_err.search(str(reterr))
+	if ss:
+		err = ss.group(0).split()
+		listkey=[err[0]]
 	if len(listkey) == 0:
 		listkey=["empty"]
 	return json.dumps(listkey)

@@ -9,6 +9,7 @@ RUN yum -y install python fuse-libs libicu dlm-lib snappy
 RUN curl "https://bootstrap.pypa.io/get-pip.py"  | python 
 RUN pip install Flask 
 RUN pip install twisted
+RUN pip install structlog
 
 RUN rm -rf /tmp/deps/
 
