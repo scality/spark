@@ -432,21 +432,32 @@ ie.
 ```
 
 
+### Filter the ARC keys for the listkeys 
+```
+#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p0.py DATA
+```
+
+### Move the result to a new dir so we keep the same path
+```
+mv /ring/fs/output/output-sparse-ARC-FILES-DATA.csv /ring/fs/output/output-sparse-ARC-FILES-META.csv
+
+```
+
 ### Report the list of stripes for all the sparse files
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files.py META
+#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p1.py META
 ```
 
 
 ### Generate the dig of all stripes
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p1.py META
+#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p2.py META
 ```
 
 ### Compare the dig to the listkeys to figure out if the files are in a good shape
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p2.py META
+#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p3.py META
 ```
