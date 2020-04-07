@@ -1,14 +1,16 @@
+
+"""
+check_files_p1.py: Check using the sparse micro-service the keys.
+output:output/output-sofs-files-%RING.csv
+"""
 from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
+from pyspark.sql.types import *
 from pyspark import SparkContext
-import os
 import sys
-import re
-import requests
-import binascii
-import hashlib
-import base64
 import yaml
+import requests
+import json
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
 with open(config_path, 'r') as ymlfile:
@@ -23,7 +25,7 @@ PATH = cfg["path"]
 
 
 spark = SparkSession.builder \
-     .appName("DIG ARC Stripes objects:"+RING) \
+     .appName("check_files_p1.py:Return the stripe keys:"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -33,62 +35,56 @@ spark = SparkSession.builder \
      .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
 
+def hex_to_dec(row):
+        key = row._c1
+	hex = key[6:22]
+	dec = long(hex,16)
+	return {'key':str(key),"hex":str(hex),"dec":str(dec)}
 
-def to_bytes(h):
-        return binascii.unhexlify(h)
 
-def get_digest(name):
-      m = hashlib.md5()
-      m.update(name)
-      digest = bytearray(m.digest())
-      return digest
-
-def get_dig_key(name):
-      digest = get_digest(name)
-      hash_str =  digest[0] << 16 |  digest[1] << 8  | digest[2]
-      oid = digest[3] << 56 |  digest[4] << 48 |  \
-            digest[5] << 40 | digest[6] << 32 |   \
-            digest[7] << 24 |  digest[8] << 16  | digest[9] << 8 | digest[10]
-      hash_str = "{0:x}".format(hash_str)
-      oid = "{0:x}".format(oid)
-      oid = oid.zfill(16)
-      volid = "00000000"
-      svcid = "51"
-      specific = "144090"
-      cls = "70"
-      key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
-      return key.zfill(40)
-
-def gen_md5_from_id(key):
-	if key == "empty":
-		return "empty"
-	elif "err" in key:
-		return key
-	else:
+def blob(row):
+	mainkey = row.key
+	key = row.hex
+	try:
 		try:
-			int_b = to_bytes(key)
-			return get_dig_key(int_b)[:14]
-		except Exception  as e:
-			print "erro_"+str(e)
+			req_s = requests.Session()
+			r = req_s.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=6000)
+			#r = requests.get('http://127.0.0.1:9999/sparse/'+str(key),timeout=600)
+			if r.status_code == 200:
+				rtlst = []
+				payload = json.loads(r.text)
+				if "SCAL" in payload[0] or "empty" in payload[0]:
+					rtlst.append({"key":mainkey,"subkey":payload[0]})
+					return rtlst
+				for k in payload:
+					rtlst.append({"key":mainkey,"subkey":k.zfill(40)})
+				return rtlst
+			else:
+				return [{"key":mainkey,"subkey":"KO"}]
+		except requests.exceptions.Timeout:
+			return [{"key":mainkey,"subkey":"REQUEST_TIMEOUT"}]
+		except requests.exceptions.RequestException as e:
+			return [{"key":mainkey,"subkey":"REQUEST_ERROR"}]
 
+	except Exception as e:
+		return [{"key":mainkey,"subkey":"KO"}]
 
-def dig(row):
-	print row
-	key = row.key
-	subkey = row.subkey
-	arckey = gen_md5_from_id(subkey)
-	print arckey
-	return [{"key":key,"subkey":subkey ,"arckey": arckey}]
+files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+df = df.filter( df["_c1"].rlike(r".*0801000040$") )
+df = df.groupBy("_c1").count()
 
+sparse = df.rdd.map(hex_to_dec)
+schema = StructType([
+ 	StructField("dec", StringType(), False),
+ 	StructField("key", StringType(), False),
+ 	StructField("hex", StringType(), False)]
+)
+#sparse = sparse.toDF(schema)
+sparse = sparse.toDF()
 
-files = "file:///%s/output/output-sofs-files-%s.csv" % (PATH,RING)
-df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
+sparse_subkey = sparse.rdd.map(lambda x : blob(x))
+sparse_subkey = sparse_subkey.flatMap(lambda x: x).toDF()
 
-df.show(10,False)
-rdd = df.rdd.map(lambda x : dig(x))
-dfnew = rdd.flatMap(lambda x: x).toDF()
-print dfnew.show(20,False)
-
-single = "file:///%s/output/output-sofs-files-DIG-%s.csv" % (PATH,RING)
-dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
-
+single = "file:///%s/output/output-sofs-files-%s.csv" % (PATH , RING)
+sparse_subkey.write.format('csv').mode("overwrite").options(header='true').save(single)

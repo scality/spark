@@ -1,3 +1,8 @@
+"""
+check_files_p3.py:Compare the DIG and the ARC keys
+output:output/output-sofs-SPARSE-FILE-SHAPE-%RING.csv
+"""
+
 from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
 from pyspark import SparkContext
@@ -18,7 +23,7 @@ PATH = cfg["path"]
 
 
 spark = SparkSession.builder \
-     .appName("Map-reduce ARC comparison:"+RING) \
+     .appName("Compare the dig ARC keys with the RING ARC keys:"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -58,6 +63,6 @@ df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("
 
 print df_final_all.show(10,False)
 
-all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
+all = "file:///fs/spark/output/output-sofs-SPARSE-FILE-SHAPE-%s.csv" % RING
 df_final_all.write.format('csv').mode("overwrite").options(header='true').save(all)
 
