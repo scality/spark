@@ -1,4 +1,6 @@
-#Somes Scripts
+# Somes Scripts
+
+## Prerequisites
 
 ### Modify the config.yml and set the credentials
 ```
@@ -31,7 +33,7 @@ sup:
 #ls /fs/spark/listkeys-DATA.csv/*
 ```
 
-# Count the number of keys per flag
+## Count the number of keys per flag
 ```
 #/root/spark_env/bin/python /root/spark/scripts/count-flag.py DATA
 ```
@@ -47,7 +49,7 @@ Output:
 +---+----------+
 ```
 
-# Count the number of uniq keys per flag
+## Count the number of uniq keys per flag
 
 ```
 #/root/spark_env/bin/python /root/spark/scripts/count-flag-uniq.py DATA
