@@ -149,7 +149,7 @@ def blob(row):
 		chunkshex =  chunks.encode('hex')
 		rtlst = []
 		for k in list(set(sparse(chunkshex))):
-			rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:-14],"size":video})
+			rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26],"size":video})
 		return rtlst
 	else:
 		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]

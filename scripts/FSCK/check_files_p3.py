@@ -9,6 +9,7 @@ from pyspark import SparkContext
 import os
 import sys
 import requests
+import yaml
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
 with open(config_path, 'r') as ymlfile:
@@ -23,7 +24,7 @@ PATH = cfg["path"]
 
 
 spark = SparkSession.builder \
-     .appName("Compare the dig ARC keys with the RING ARC keys:"+RING) \
+     .appName("check_files_p3.py:Compare the dig ARC keys with the RING ARC keys:"+RING) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -42,11 +43,9 @@ dfdig =  spark.read.format("csv").option("header", "true").option("inferSchema",
 
 dfsparse = dfsparse.withColumnRenamed("_c1","arckey")
 
-dfsparse.show(10,False)
-dfdig.show(10,False)
 
-inner_join_true =  dfsingle.join(dfsinglesync,["arckey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','subkey','is_present')
-inner_join_false =  dfsingle.join(dfsinglesync,["arckey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','subkey','is_present')
+inner_join_true =   dfdig.join(dfsparse,["arckey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','subkey','is_present')
+inner_join_false =  dfdig.join(dfsparse,["arckey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','subkey','is_present')
 
 print inner_join_true.show(20,False)
 print inner_join_false.show(20,False)
@@ -54,9 +53,7 @@ print inner_join_false.show(20,False)
 df_final = inner_join_true.union(inner_join_false)
 print df_final.show(10,False)
 
-df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'),F.max('size').alias('size'))
-
-print df_all.show(10,False)
+df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'))
 
 columns_to_drop = ['count','sum']
 df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("count") ),True).otherwise(False)).drop(*columns_to_drop)
