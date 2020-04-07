@@ -1,4 +1,4 @@
-# SOFS file system check 
+# SOFS file system consistency check 
 
 
 ### Run a full listkeys of the customer DATA RING
