@@ -167,8 +167,9 @@ Modify the IP
 ```
 
 Add the biziod to the list of disk
-# /etc/scality/node-rtl/confdb/msgstorenodecfg.xml
+
 ```
+#/etc/scality/node-rtl/confdb/msgstorenodecfg.xml
       <name>bizionames</name>
       <val>
         <name>bizioname</name>
