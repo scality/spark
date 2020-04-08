@@ -3,13 +3,13 @@
 
 ## Requirements
 
-Pull the docker spark-worker image on the servers you want to act as a spark node
+Pull the docker spark-worker image on the servers you want to act as a spark node.
 
 ```
 #docker pull patrickdos/spark-worker
 ```
 
-Pull the docker spark-master image on a server ( could be a spark node )
+Pull the docker spark-master image on a server ( could be a spark node ).
 
 ```
 #docker pull patrickdos/spark-master
@@ -49,8 +49,8 @@ master: "spark://178.33.63.238:7077"
 ## How to submit a job to the cluster
 
 As you'll notice the python virtualenv should not the needed to submit the jobs since all the magic will happen inside the docker.
-Specify the script name using the -s argument.
-Specify the RING nale using the -r argument. 
+* Specify the script name using the -s argument.
+* Specify the RING nale using the -r argument. 
 
 ``` 
 #cd /root/spark/scripts/
