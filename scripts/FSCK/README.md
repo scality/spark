@@ -411,7 +411,7 @@ getfattr: Suppression des « / » en tête des chemins absolus
 This docker is a micro-service that will be in charge of parsing the SPARSE b+tree to report the stripes.
 Pass the previous sfused config file to the docker volume parameter.
 ```
-#docker run -d  -v /ring/fs/RTL2/sfused.conf:/home/website/bin/sfused.conf:ro --rm  --net=host --name "sofs" sofswebservice
+#docker run -d  -v /ring/fs/RTL2/sfused.conf:/home/website/bin/sfused.conf:ro --rm  --net=host --name "sofs" patrickdos/sofswebservice
 ```
 
 ### Make sure the docker works

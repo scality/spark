@@ -60,6 +60,6 @@ df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("
 
 print df_final_all.show(10,False)
 
-all = "file:///fs/spark/output/output-sofs-SPARSE-FILE-SHAPE-%s.csv" % RING
+all = "file:///%s/output/output-sofs-SPARSE-FILE-SHAPE-%s.csv" % (PATH,RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='true').save(all)
 
