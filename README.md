@@ -49,7 +49,9 @@ master: "spark://178.33.63.238:7077"
 ## How to submit a job to the cluster
 
 As you'll notice the python virtualenv should not the needed to submit the jobs since all the magic will happen inside the docker.
+
 * Specify the script name using the -s argument.
+
 * Specify the RING nale using the -r argument. 
 
 ``` 
