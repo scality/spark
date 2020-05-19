@@ -41,7 +41,9 @@ spark = SparkSession.builder \
 
 files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
-df = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("0")).select("_c1")
+#df = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("0")).select("_c1")
+df = df.filter(df["_c1"].rlike(r".*000000..5.........$")) 
+
 
 
 dfARC = df.filter(df["_c1"].rlike(r".*70$"))

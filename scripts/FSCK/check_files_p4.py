@@ -42,7 +42,7 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-inodes =   "file:///%s/inodes.txt" % PATH
+inodes =   "file:///%s/inodes-*.txt" % PATH
 schema = StructType([
         StructField("inode", StringType(), False),
         StructField("path", StringType(), False)]

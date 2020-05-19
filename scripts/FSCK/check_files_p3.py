@@ -43,22 +43,19 @@ dfdig =  spark.read.format("csv").option("header", "true").option("inferSchema",
 
 dfsparse = dfsparse.withColumnRenamed("_c1","arckey")
 
-
 inner_join_true =   dfdig.join(dfsparse,["arckey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','subkey','is_present')
 inner_join_false =  dfdig.join(dfsparse,["arckey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','subkey','is_present')
 
-print inner_join_true.show(20,False)
-print inner_join_false.show(20,False)
 
 df_final = inner_join_true.union(inner_join_false)
-print df_final.show(10,False)
+
+all = "file:///%s/output/output-sofs-SPARSE-FILE-SHAPE-INNER-%s.csv" % (PATH,RING)
+df_final.write.format('csv').mode("overwrite").options(header='true').save(all)
 
 df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'))
-
 columns_to_drop = ['count','sum']
 df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("count") ),True).otherwise(False)).drop(*columns_to_drop)
 
-print df_final_all.show(10,False)
 
 all = "file:///%s/output/output-sofs-SPARSE-FILE-SHAPE-%s.csv" % (PATH,RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='true').save(all)
