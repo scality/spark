@@ -22,8 +22,8 @@ dfsinglesync = dfsinglesync.withColumnRenamed("_c1","digkey")
 dfsinglesync.show(10,False)
 dfsingle.show(10,False)
 
-inner_join_true =  dfsingle.join(dfsinglesync,["digkey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','size','is_present')
-inner_join_false =  dfsingle.join(dfsinglesync,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','size','is_present')
+inner_join_true =  dfsingle.join(dfsinglesync,["digkey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','size','is_present','digkey')
+inner_join_false =  dfsingle.join(dfsinglesync,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','size','is_present','digkey')
 
 print inner_join_true.show(20,False)
 print inner_join_false.show(20,False)
