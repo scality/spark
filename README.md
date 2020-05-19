@@ -108,7 +108,7 @@ For **261622847** keys it takes:
 ```
 
 
-## Deploy the Spark Virtual env
+## Centos 7 Installation:Deploy the Spark Virtual env
 **http://packages.scality.com/extras/centos/7Server/x86_64/scality/spark_env.tgz**
 
 
@@ -117,6 +117,52 @@ For **261622847** keys it takes:
 #cd /root 
 #tar xzf spark_env.tgz
 ```
+
+
+## Centos 6 installation:Deploy the Spark Virtual env
+
+### Download python2.7 + Centos6 spark_env
+
+
+**http://sreport.scality.com/video/python-2.7-centos6.tgz**
+
+**http://sreport.scality.com/video/spark_env-centos-6.tgz**
+
+
+###  Untar the env
+
+```
+#cd /root/
+#tar xvzf spark_env-centos-6.tgz
+```
+
+### Untar the python2.7 libs
+
+```
+#cd /
+#tar cvzf /root/python-2.7-centos6.tgz
+```
+
+### Create the following file
+
+```
+# cat /etc/ld.so.conf.d/python27.conf
+/usr/local/lib
+```
+
+### load the lib
+
+```
+#ldconfig
+```
+
+## Update Java to version 1.8
+
+```
+#yum -y install java-1.8.0-openjdk
+```
+
+## Enable the virt_env + Download the spark scripts 
 
 ### Active the virtual env
 ```

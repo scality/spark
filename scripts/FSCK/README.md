@@ -503,7 +503,7 @@ EEF599F5850EF40A,17218838030099346442,F70568EEF599F5850EF40A000000000801000040
 As a requirement we need to build a list of inodes with the paths.
 
 ```
-find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark/inodes.txt
+find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark/inodes-2.txt 
 ```
 
 ```
