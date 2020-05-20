@@ -30,7 +30,7 @@ spark = SparkSession.builder \
 
 
 
-files = "file:///fs/spark/listkeys-%s.csv" % RING
+files = "file:///%s/listkeys-%s.csv" % (PATH,RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 
@@ -66,5 +66,5 @@ dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 
 dftotal = dfARCSYNC.union(dfARCsingle)
-total = "file:///fs/spark/output/s3fsck/input-arc-%s-keys.csv" % RING
+total = "file:///%s/output/s3fsck/input-arc-%s-keys.csv" % (PATH,RING)
 dftotal.write.format('csv').mode("overwrite").options(header='true').save(total)

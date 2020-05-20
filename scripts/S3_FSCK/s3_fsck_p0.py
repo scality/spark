@@ -20,7 +20,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
-
+srebuildd_ip = cfg["srebuildd_ip"]
 
 spark = SparkSession.builder \
      .appName("s3_fsck_p0.py:Translate the S3 ARC keys :"+RING) \
@@ -102,7 +102,8 @@ def sparse(f):
 
 def check_split(key):
 
-	r = requests.head('http://127.0.0.1:81/rebuild/arc/'+str(key.zfill(40)))
+	url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
+	r = requests.head(url)
 	if r.status_code == 200:
 		split = r.headers.get('X-Scal-Attr-Is-Split',False)
 		return split
@@ -116,7 +117,8 @@ def blob(row):
 		try:
 			header = {}
 			header['x-scal-split-policy'] = "raw"
-			r = requests.get('http://127.0.0.1:81/rebuild/arc/'+str(key.zfill(40)),headers=header,stream=True)
+			url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
+			r = requests.get(url,headers=header,stream=True)
 			if r.status_code == 200:
 				chunks = ""
 				for chunk in r.iter_content(chunk_size=1024000000):
@@ -137,12 +139,12 @@ def blob(row):
 		return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
 	
 
-files = "file:///fs/spark/s3-%s/" % RING
+files = "file:///%s/s3-%s/" % (PATH,RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
-single = "file:///fs/spark/output/s3fsck/s3-dig-keys-%s.csv" % RING
+single = "file:///%s/output/s3fsck/s3-dig-keys-%s.csv" % (PATH,RING)
 dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
 

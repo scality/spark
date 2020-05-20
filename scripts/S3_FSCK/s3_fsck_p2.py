@@ -31,39 +31,15 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-s3keys = "file:///fs/spark/output/s3fsck/s3-dig-keys-%s.csv" % RING
-ringkeys = "file:///fs/spark/output/s3fsck/input-arc-%s-keys.csv" % RING
+s3keys = "file:///%s/output/s3fsck/s3-dig-keys-%s.csv" % (PATH,RING)
+ringkeys = "file:///%s/output/s3fsck/input-arc-%s-keys.csv" % (PATH,RING)
 dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
 
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
-#inner_join_true =  dfs3keys.join(dfringkeys,["digkey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('key','subkey','is_present','digkey')
-#inner_join_false =  dfs3keys.join(dfringkeys,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('key','subkey','is_present','digkey')
-
-inner_join_true =  dfringkeys.join(dfs3keys,["digkey"], "leftsemi").withColumn('is_present', F.lit(int(1))).select('ringkey','is_present','digkey')
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('ringkey','is_present','digkey')
+df_final = inner_join_false.select("ringkey")
+all = "file:///%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PATH,RING)
+df_final.write.format('csv').mode("overwrite").options(header='false').save(all)
 
-print inner_join_true.show(20,False)
-print inner_join_false.show(20,False)
-
-df_final = inner_join_true.union(inner_join_false)
-all = "file:///fs/spark/output/s3fsck/output-s3objects-df_final-%s.csv" % RING
-df_final.write.format('csv').mode("overwrite").options(header='true').save(all)
-
-"""
-print df_final.show(10,False)
-
-df_all = df_final.groupBy("key").agg(F.sum('is_present').alias('sum'),F.count('is_present').alias('count'))
-
-print df_all.show(10,False)
-
-columns_to_drop = ['count','sum']
-df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("count") ),True).otherwise(False)).drop(*columns_to_drop)
-
-print df_final_all.show(10,False)
-
-all = "file:///fs/spark/output/s3fsck/output-s3objects-%s.csv" % RING
-df_final_all.write.format('csv').mode("overwrite").options(header='true').save(all)
-
-"""
