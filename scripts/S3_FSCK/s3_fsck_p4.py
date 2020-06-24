@@ -48,6 +48,7 @@ def deletekey(row):
 
 files = "file:///%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+df = df.repartition(4)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
 deletedorphans = "file:///%s/output/s3fsck/output-deleted-s3-orphans-%s.csv" % (PATH, RING)

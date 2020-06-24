@@ -142,6 +142,7 @@ def blob(row):
 files = "file:///%s/s3-%s/" % (PATH,RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
+df = df.repartition(4)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
