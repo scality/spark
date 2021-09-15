@@ -4,7 +4,9 @@ path: "/fs/spark/"
 protocol: file
 srebuildd_ip: "127.0.0.1"
 srebuildd_path: "/rebuild/chord"
-retention: 86400*7
+srebuildd_single_path: "rebuild/arc-DATA"
+srebuildd_double_path: "rebuild/arcdata-DATA"
+retention: 604800
 s3:
   access_key: ""
   secret_key: ""
