@@ -20,11 +20,21 @@ else:
 
 PATH = cfg["path"]
 srebuildd_ip  = cfg["srebuildd_ip"]
-srebuildd_path  = cfg["srebuildd_path"]
-srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
+#srebuildd_path  = cfg["srebuildd_single_path"]
+srebuildd_path  = cfg["srebuildd_double_path"]
+srebuildd_url = "http://%s:81/%s" % ( srebuildd_ip, srebuildd_path)
+PROT = cfg["protocol"]
+ACCESS_KEY = cfg['s3']['access_key']
+SECRET_KEY = cfg['s3']['secret_key']
+ENDPOINT_URL = cfg['s3']['endpoint']
 
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
      .appName("s3_fsck_p4.py:Clean the extra keys :"+RING) \
+     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
+     .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY)\
+     .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY)\
+     .config("spark.hadoop.fs.s3a.endpoint", ENDPOINT_URL) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -44,13 +54,13 @@ def deletekey(row):
 		status_code = "OK"
 		return ( key, status_code, url)
 	except requests.exceptions.ConnectionError as e:
-		return (key,"ERROR_HTTP")
+		return ( key,"ERROR_HTTP")
 
-files = "file:///%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PATH, RING)
+files = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.repartition(4)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
-deletedorphans = "file:///%s/output/s3fsck/output-deleted-s3-orphans-%s.csv" % (PATH, RING)
+deletedorphans = "%s://%s/output/s3fsck/output-deleted-s3-orphans-%s.csv" % (PROT, PATH, RING)
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
 

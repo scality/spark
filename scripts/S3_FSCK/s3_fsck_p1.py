@@ -1,8 +1,8 @@
 from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
 from pyspark import SparkContext
+import os
 import sys
-
 import yaml
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
@@ -15,10 +15,18 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROT = cfg["protocol"]
+ACCESS_KEY = cfg['s3']['access_key']
+SECRET_KEY = cfg['s3']['secret_key']
+ENDPOINT_URL = cfg['s3']['endpoint']
 
-
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
      .appName("s3_fsck_p1.py:Build RING keys :"+RING) \
+     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
+     .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY)\
+     .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY)\
+     .config("spark.hadoop.fs.s3a.endpoint", ENDPOINT_URL) \
      .config("spark.executor.instances", cfg["spark.executor.instances"]) \
      .config("spark.executor.memory", cfg["spark.executor.memory"]) \
      .config("spark.executor.cores", cfg["spark.executor.cores"]) \
@@ -29,10 +37,8 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-
-files = "file:///%s/listkeys-%s.csv" % (PATH,RING)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
-
+files = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 #list the ARC SPLIT main chunks
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
@@ -47,7 +53,6 @@ dfCOSsingle = dfCOSsingle.withColumn("ringkey",dfCOSsingle["_c1"])
 dfCOSsingle = dfCOSsingle.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
-
 
 #list the ARC SYNC KEYS
 df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1")
@@ -64,7 +69,6 @@ dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
-
 dftotal = dfARCSYNC.union(dfARCsingle)
-total = "file:///%s/output/s3fsck/input-arc-%s-keys.csv" % (PATH,RING)
+total = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
 dftotal.write.format('csv').mode("overwrite").options(header='true').save(total)

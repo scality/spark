@@ -4,6 +4,7 @@ import shutil
 import requests
 import time
 requests.packages.urllib3.disable_warnings()
+import s3fs
 
 from pyspark.sql import SparkSession, Row, SQLContext
 from pyspark import SparkContext
@@ -26,19 +27,43 @@ else:
     # Handle target environment that doesn't support HTTPS verification
     ssl._create_default_https_context = _create_unverified_https_context
 
-RING = sys.argv[1]
-spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING).getOrCreate()
 
 config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
+if len(sys.argv) >1:
+        RING = sys.argv[1]
+else:
+        RING = cfg["ring"]
+
 user = cfg["sup"]["login"]
 password = cfg["sup"]["password"]
 url = cfg["sup"]["url"]
 cpath = cfg["path"]
-retention = cfg.get("retention",86400*7)
-path = "%s/listkeys-%s.csv/" % (cpath, RING)
+prot = cfg["protocol"]
+ACCESS_KEY = cfg['s3']['access_key']
+SECRET_KEY = cfg['s3']['secret_key']
+ENDPOINT_URL = cfg['s3']['endpoint']
+retention = cfg.get("retention",604800)
+path = "%s/listkeys-%#s.csv" % (cpath, RING)
+
+spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
+     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+     .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY) \
+     .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY) \
+     .config("spark.hadoop.fs.s3a.endpoint", ENDPOINT_URL) \
+     .config("spark.executor.instances", cfg["spark.executor.instances"]) \
+     .config("spark.executor.memory", cfg["spark.executor.memory"]) \
+     .config("spark.executor.cores", cfg["spark.executor.cores"]) \
+     .config("spark.driver.memory", cfg["spark.driver.memory"]) \
+     .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
+     .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", cfg["path"]) \
+     .getOrCreate()
+
+s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwargs={'endpoint_url': ENDPOINT_URL})
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 def prepare_path():
 	try:
@@ -47,13 +72,16 @@ def prepare_path():
 		pass
 	if not os.path.exists(path):
 		os.makedirs(path)
-	
+
 def listkeys(row, now):
 	klist = []
 	n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
 
 	fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
-	f = open(fname,"w+")
+	if prot == 'file':
+		f = open(fname,"w+")
+	elif prot == 's3a':
+		f = s3.open(fname, "ab")
 	params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
 	for k in n.listKeysIter(extra_params=params):
 		if len(k.split(",")[0]) > 30 :
@@ -71,5 +99,6 @@ df = spark.createDataFrame(listm)
 print df.show(36,False)
 dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
+dftowrite = dfnew.rdd.map(lambda x:make_array(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
