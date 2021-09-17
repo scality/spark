@@ -14,9 +14,9 @@ with open(config_path, 'r') as ymlfile:
 
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 srebuildd_ip  = cfg["srebuildd_ip"]
@@ -45,16 +45,16 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 def deletekey(row):
-	key = row._c0
-	try:
-		url = "%s/%s" % ( srebuildd_url, str(key.zfill(40)) )
-		print(url)
-		#r = requests.delete(url)
-		#status_code = r.status_code
-		status_code = "OK"
-		return ( key, status_code, url)
-	except requests.exceptions.ConnectionError as e:
-		return ( key,"ERROR_HTTP")
+    key = row._c0
+    try:
+        url = "%s/%s" % ( srebuildd_url, str(key.zfill(40)) )
+        print(url)
+        #r = requests.delete(url)
+        #status_code = r.status_code
+        status_code = "OK"
+        return ( key, status_code, url)
+    except requests.exceptions.ConnectionError as e:
+        return ( key,"ERROR_HTTP")
 
 files = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
