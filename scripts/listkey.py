@@ -92,11 +92,13 @@ def listkeys(row, now):
             if len(k.split(",")[0]) > 30 :
                 #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
                 data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
+                print("Going to check if data key: " + str(data[0]))
                 if re.search(arcdatakeypattern, str(data[0])):
                     stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
                     for s in stat.findall("result"):
                         status = s.find("status").text
                         if status == "CHUNK_STATUS_OK":
+                            print("Status: " + str(status))
                             usermd = s.find("usermd").text
                             if usermd is not None:
                                 print("Encoded usermd: " + usermd)
