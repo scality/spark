@@ -115,13 +115,13 @@ def listkeys(row, now):
                                                 objectkeylist.append(raw)
                                             objectkey = ''.join(objectkeylist)
                                             print objectkey
+                                            data.append(str(objectkey))
                                 # for elem in stat.iter():
                                 #         if elem.tag == 'usermd':
                                 #                 for md in elem.iter():
                                 #                         data.append(md.text)
                         else:
-                                data.append('')
-                        data.append(str(objectkey))
+                            data.append('')
                         #data.append(str(row.chordport))
                         #data.append(str(row.name))
                         data = ",".join(data)
