@@ -20,11 +20,11 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
-PROT = cfg['protocol']
 
 srebuildd_ip = cfg["srebuildd_ip"]
 srebuildd_path = cfg["srebuildd_single_path"]
 #srebuildd_path = cfg["srebuildd_double_path"]
+PROT = cfg['protocol']
 ACCESS_KEY = cfg['s3']['access_key']
 SECRET_KEY = cfg['s3']['secret_key']
 ENDPOINT_URL = cfg['s3']['endpoint']
@@ -47,6 +47,7 @@ spark = SparkSession.builder \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
      .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
+
 
 
 def pad2(n):
@@ -73,9 +74,7 @@ def get_dig_key(name):
       oid = oid.zfill(16)
       volid = "00000000"
       svcid = "51"
-      #Make sure to change specific when the ARC schema changes 
-      #specific = "102060" 
-      specific = ARC['8+4']
+      specific = ARC['8+4'] #Make sure to change specific when the ARC schema changes
       cls = "70"
       key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
       return key.zfill(40)
@@ -166,7 +165,7 @@ def blob(row):
 	elif split == False:
 		print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
 		return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
-	
+
 new_path = os.path.join(PATH, 's3-' + RING)
 if PROT == 'file' and not os.path.exists(new_path):
 	os.mkdir(new_path)

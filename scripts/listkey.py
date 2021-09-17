@@ -4,6 +4,7 @@ import shutil
 import requests
 import time
 requests.packages.urllib3.disable_warnings()
+import re
 import s3fs
 
 from pyspark.sql import SparkSession, Row, SQLContext
@@ -65,6 +66,8 @@ spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
 s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwargs={'endpoint_url': ENDPOINT_URL})
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+
 def prepare_path():
 	try:
 		shutil.rmtree(path)
@@ -74,22 +77,34 @@ def prepare_path():
 		os.makedirs(path)
 
 def listkeys(row, now):
-	klist = []
-	n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
+        klist = []
+        n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
 
-	fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
-	if prot == 'file':
-		f = open(fname,"w+")
-	elif prot == 's3a':
-		f = s3.open(fname, "ab")
-	params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
-	for k in n.listKeysIter(extra_params=params):
-		if len(k.split(",")[0]) > 30 :
-			#klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])	
-			data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
-			data = ",".join(data)
-			print >> f , data
-	return [( row.ip, row.adminport, 'OK')]
+        fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
+        if prot == 'file':
+                f = open(fname,"w+")
+        elif prot == 's3a':
+                f = s3.open(fname, "ab")
+        params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
+        for k in n.listKeysIter(extra_params=params):
+                if len(k.split(",")[0]) > 30 :
+                        #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
+                        data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
+                        if re.search(arcdatakeypattern, str(data[0])):
+                                stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING)
+                                for elem in stat.iter():
+                                        if elem.tag == 'usermd':
+                                                for md in elem.iter():
+                                                        data.append(md.text)
+                        else:
+                                data.append('')
+                        #data.append(str(row.ip))
+                        #data.append(str(row.chordport))
+                        #data.append(str(row.name))
+                        data = ",".join(data)
+                        print >> f , data
+
+        return [( row.ip, row.adminport, 'OK')]
 
 now = int(str(time.time()).split('.')[0]) - retention
 prepare_path()
@@ -99,6 +114,6 @@ df = spark.createDataFrame(listm)
 print df.show(36,False)
 dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
-dftowrite = dfnew.rdd.map(lambda x:make_array(x, now))
+#dftowrite = dfnew.rdd.map(lambda x:make_array(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
