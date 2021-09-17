@@ -91,9 +91,10 @@ def listkeys(row, now):
         if len(k.split(",")[0]) > 30 :
             #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
+            print("Appending : " + str(row.ip) + str(row.chordport))
             data.append(str(row.ip))
             data.append(str(row.chordport))
-            data.append(str(row.name))
+            # data.append(str(row.name))
             # print("Going to check if data key: " + data[0])
             if not re.search(arcdatakeypattern, data[0]):
                 print("Regex did not match: " + data[0])
