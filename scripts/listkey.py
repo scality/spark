@@ -7,6 +7,7 @@ requests.packages.urllib3.disable_warnings()
 import re
 import s3fs
 import struct
+import base64
 
 from pyspark.sql import SparkSession, Row, SQLContext
 from pyspark import SparkContext
@@ -98,6 +99,7 @@ def listkeys(row, now):
                             if status == "CHUNK_STATUS_OK":
                                 usermd = s.find("usermd").text
                                 if usermd is not None:
+                                    print("Encoded usermd: " + usermd)
                                     use_base64 = False
                                     try:
                                         use_base64 = s.find("use_base64").text
@@ -106,7 +108,9 @@ def listkeys(row, now):
                                     except:
                                         pass
                                     if use_base64 is True:
+                                        print("Use base64 is true")
                                         rawusermd = base64.b64decode(usermd)
+                                        print("Raw usermd: " + rawusermd)
                                         # usermd = base64.b64decode(usermd).decode("iso8859-1")
                                         objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
                                         objectkeylist = []
