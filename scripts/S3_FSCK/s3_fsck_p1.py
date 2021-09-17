@@ -10,9 +10,9 @@ with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
