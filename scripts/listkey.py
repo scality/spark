@@ -98,9 +98,10 @@ def listkeys(row, now):
                 else:
                     print("Regex match!")
                     stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
-                    print(stat)
+                    # print(stat)
                     for s in stat.findall("result"):
                         status = s.find("status").text
+                        print("Status: " + status)
                         if status == "CHUNK_STATUS_OK":
                             print("Status: " + str(status))
                             usermd = s.find("usermd").text
