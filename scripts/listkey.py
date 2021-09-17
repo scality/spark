@@ -6,6 +6,7 @@ import time
 requests.packages.urllib3.disable_warnings()
 import re
 import s3fs
+import struct
 
 from pyspark.sql import SparkSession, Row, SQLContext
 from pyspark import SparkContext
