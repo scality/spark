@@ -71,12 +71,12 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.
 arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 
 def prepare_path():
-	try:
-		shutil.rmtree(path)
-	except:
-		pass
-	if not os.path.exists(path):
-		os.makedirs(path)
+    try:
+        shutil.rmtree(path)
+    except:
+        pass
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def listkeys(row, now):
         klist = []
