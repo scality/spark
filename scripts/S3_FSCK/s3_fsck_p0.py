@@ -120,8 +120,8 @@ def check_split(key):
     #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
     #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
     url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
-    print("The key for the check_split request is: " + str(key))
-    print("The URL for the check_split request is: " + str(url))
+    # print("The key for the check_split request is: " + str(key))
+    # print("The URL for the check_split request is: " + str(url))
     r = requests.head(url)
     if r.status_code == 200:
         split = r.headers.get('X-Scal-Attr-Is-Split',False)
@@ -139,11 +139,11 @@ def blob(row):
             #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
             #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
             url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
-            print("The key for the blob request is: " + str(key))
-            print("The URL for the blob request is: " + str(url))
+            # print("The key for the blob request is: " + str(key))
+            # print("The URL for the blob request is: " + str(url))
             r = requests.get(url,headers=header,stream=True)
             if r.status_code == 200:
-                print("Status code: " + str(r.status_code))
+                # print("Status code: " + str(r.status_code))
                 chunks = ""
                 for chunk in r.iter_content(chunk_size=1024000000):
                     if chunk:
@@ -153,17 +153,17 @@ def blob(row):
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
                     rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26]})
-                print("Status code 200, chunk iterated & size in response, returning rtlst")
+                # print("Status code 200, chunk iterated & size in response, returning rtlst")
                 return rtlst
             else:
-                print("Status code: " + str(r.status_code))
+                # print("Status code: " + str(r.status_code))
                 return [{"key":key,"subkey":"NOK","digkey":"NOK"}]
 
         except requests.exceptions.ConnectionError as e:
-            print("Connection Error")
+            # print("Connection Error")
             return [{"key":key,"subkey":"NOK_HTTP","digkey":"NOK_HTTP"}]
     elif split == False:
-        print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
+        # print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
         return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, 's3-' + RING)
