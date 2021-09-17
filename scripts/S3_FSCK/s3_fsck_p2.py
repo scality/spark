@@ -12,9 +12,9 @@ with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
@@ -50,4 +50,3 @@ inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn(
 df_final = inner_join_false.select("ringkey")
 all = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
 df_final.write.format('csv').mode("overwrite").options(header='false').save(all)
-
