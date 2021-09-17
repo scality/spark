@@ -83,39 +83,39 @@ def listkeys(row, now):
 
         fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
         if prot == 'file':
-                f = open(fname,"w+")
+            f = open(fname,"w+")
         elif prot == 's3a':
-                f = s3.open(fname, "ab")
+            f = s3.open(fname, "ab")
         params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
         for k in n.listKeysIter(extra_params=params):
-                if len(k.split(",")[0]) > 30 :
-                        #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
-                        data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
-                        if re.search(arcdatakeypattern, str(data[0])):
-                                stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
-                                for s in stat.findall("result"):
-                                    status = s.find("status").text
-                                    if status == "CHUNK_STATUS_OK":
-                                        usermd = s.find("usermd").text
-                                        if usermd is not None:
-                                            use_base64 = False
-                                            try:
-                                                use_base64 = s.find("use_base64").text
-                                                if int(use_base64) == 1:
-                                                    use_base64 = True
-                                            except:
-                                                pass
-                                            if use_base64 is True:
-                                                rawusermd = base64.b64decode(usermd)
-                                                # usermd = base64.b64decode(usermd).decode("iso8859-1")
-                                            objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
-                                            objectkeylist = []
-                                            for x in objectkeyinbytes:
-                                                raw = '{:02X}'.format(x)
-                                                objectkeylist.append(raw)
-                                            objectkey = ''.join(objectkeylist)
-                                            print objectkey
-                                            data.append(str(objectkey))
+            if len(k.split(",")[0]) > 30 :
+                #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
+                data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
+                    if re.search(arcdatakeypattern, str(data[0])):
+                        stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
+                        for s in stat.findall("result"):
+                            status = s.find("status").text
+                            if status == "CHUNK_STATUS_OK":
+                                usermd = s.find("usermd").text
+                                if usermd is not None:
+                                    use_base64 = False
+                                    try:
+                                        use_base64 = s.find("use_base64").text
+                                        if int(use_base64) == 1:
+                                            use_base64 = True
+                                    except:
+                                        pass
+                                    if use_base64 is True:
+                                        rawusermd = base64.b64decode(usermd)
+                                        # usermd = base64.b64decode(usermd).decode("iso8859-1")
+                                        objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
+                                        objectkeylist = []
+                                        for x in objectkeyinbytes:
+                                            raw = '{:02X}'.format(x)
+                                            objectkeylist.append(raw)
+                                        objectkey = ''.join(objectkeylist)
+                                        print objectkey
+                                        data.append(str(objectkey))
                                 # for elem in stat.iter():
                                 #         if elem.tag == 'usermd':
                                 #                 for md in elem.iter():
