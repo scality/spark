@@ -101,9 +101,9 @@ def listkeys(row, now):
                     # print(stat)
                     for s in stat.findall("result"):
                         status = s.find("status").text
-                        print("Status: " + status)
-                        if status == "CHUNK_STATUS_OK":
-                            print("Status: " + str(status))
+                        # print("Status: " + status)
+                        if status == "CHUNKAPI_STATUS_OK":
+                            # print("Status: " + str(status))
                             usermd = s.find("usermd").text
                             if usermd is not None:
                                 print("Encoded usermd: " + usermd)
