@@ -94,6 +94,7 @@ def listkeys(row, now):
                 data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
                 print("Going to check if data key: " + str(data[0]))
                 if re.search(arcdatakeypattern, data[0]):
+                    print("Regex search match!")
                     stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
                     for s in stat.findall("result"):
                         status = s.find("status").text
