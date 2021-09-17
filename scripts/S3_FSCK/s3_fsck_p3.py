@@ -14,9 +14,9 @@ with open(config_path, 'r') as ymlfile:
 
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
@@ -44,19 +44,19 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 def statkey(row):
-	key = row._c0
-	try:
-		url = "%s/%s" % ( srebuildd_url, str(key.zfill(40)) )
-		r = requests.head(url)
-		if r.status_code == 200:
-			print("Status code: " + str(r.status_code))
-			size = r.headers.get("X-Scal-Size",False)
-			return ( key, r.status_code, size)
-		else:
-			print("Status code: " + str(r.status_code))
-			return ( key, r.status_code, 0)
-	except requests.exceptions.ConnectionError as e:
-		return ( key, "HTTP_ERROR", 0)
+    key = row._c0
+    try:
+        url = "%s/%s" % ( srebuildd_url, str(key.zfill(40)) )
+        r = requests.head(url)
+        if r.status_code == 200:
+            print("Status code: " + str(r.status_code))
+            size = r.headers.get("X-Scal-Size",False)
+            return ( key, r.status_code, size)
+        else:
+            print("Status code: " + str(r.status_code))
+            return ( key, r.status_code, 0)
+    except requests.exceptions.ConnectionError as e:
+        return ( key, "HTTP_ERROR", 0)
 
 
 files = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
@@ -73,4 +73,3 @@ print(string)
 
 #totalsize = "file:///%s/output/s3fsck/output-size-computed-%s.csv" % (PATH, RING)
 #rdd1.write.format('csv').mode("overwrite").options(header='false').save(totalsize)
-
