@@ -15,9 +15,9 @@ with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 
@@ -51,124 +51,124 @@ spark = SparkSession.builder \
 
 
 def pad2(n):
-  x = '%s' % (n,)
-  return ('0' * (len(x) % 2)) + x
+    x = '%s' % (n,)
+    return ('0' * (len(x) % 2)) + x
 
 def to_bytes(h):
-        return binascii.unhexlify(h)
+    return binascii.unhexlify(h)
 
 def get_digest(name):
-      m = hashlib.md5()
-      m.update(name)
-      digest = bytearray(m.digest())
-      return digest
+    m = hashlib.md5()
+    m.update(name)
+    digest = bytearray(m.digest())
+    return digest
 
 def get_dig_key(name):
-      digest = get_digest(name)
-      hash_str =  digest[0] << 16 |  digest[1] << 8  | digest[2]
-      oid = digest[3] << 56 |  digest[4] << 48 |  \
-            digest[5] << 40 | digest[6] << 32 |   \
-            digest[7] << 24 |  digest[8] << 16  | digest[9] << 8 | digest[10]
-      hash_str = "{0:x}".format(hash_str)
-      oid = "{0:x}".format(oid)
-      oid = oid.zfill(16)
-      volid = "00000000"
-      svcid = "51"
-      specific = ARC['8+4'] #Make sure to change specific when the ARC schema changes
-      cls = "70"
-      key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
-      return key.zfill(40)
+    digest = get_digest(name)
+    hash_str =  digest[0] << 16 |  digest[1] << 8  | digest[2]
+    oid = digest[3] << 56 |  digest[4] << 48 |  \
+        digest[5] << 40 | digest[6] << 32 |   \
+        digest[7] << 24 |  digest[8] << 16  | digest[9] << 8 | digest[10]
+    hash_str = "{0:x}".format(hash_str)
+    oid = "{0:x}".format(oid)
+    oid = oid.zfill(16)
+    volid = "00000000"
+    svcid = "51"
+    specific = ARC['8+4'] #Make sure to change specific when the ARC schema changes
+    cls = "70"
+    key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
+    return key.zfill(40)
 
 def gen_md5_from_id(key):
-	key = key.lstrip('0')
+    key = key.lstrip('0')
         key = pad2(key)
         int_b = to_bytes(key)
         return get_dig_key(int_b)
 
 
 def sparse(f):
-        lst  = []
-        m = re.findall(r'(200000000000014|20100000014)([0-9-a-f]{40})',f)
-        n = re.findall(r'(200000000000013|20100000013)([0-9-a-f]{38})',f)
-        o = re.findall(r'(200000000000012|20100000012)([0-9-a-f]{36})',f)
-        marc =  re.findall(r'(51d68800000014)([0-9-a-f]{40})',f)
-        narc =  re.findall(r'(51d68800000013)([0-9-a-f]{38})',f)
-        oarc =  re.findall(r'(51d68800000012)([0-9-a-f]{36})',f)
+    lst  = []
+    m = re.findall(r'(200000000000014|20100000014)([0-9-a-f]{40})',f)
+    n = re.findall(r'(200000000000013|20100000013)([0-9-a-f]{38})',f)
+    o = re.findall(r'(200000000000012|20100000012)([0-9-a-f]{36})',f)
+    marc =  re.findall(r'(51d68800000014)([0-9-a-f]{40})',f)
+    narc =  re.findall(r'(51d68800000013)([0-9-a-f]{38})',f)
+    oarc =  re.findall(r'(51d68800000012)([0-9-a-f]{36})',f)
         for mm in m:
-                key = mm[1]
-                lst.append(key.upper())
+            key = mm[1]
+            lst.append(key.upper())
         for nn in n:
-                key = nn[1]
-                lst.append(key.upper())
+            key = nn[1]
+            lst.append(key.upper())
         for oo in o:
-                key = oo[1]
-                lst.append(key.upper())
+            key = oo[1]
+            lst.append(key.upper())
         for mmarc in marc:
-                key = mmarc[1]
-                lst.append(key.upper())
+            key = mmarc[1]
+            lst.append(key.upper())
         for nnarc in narc:
-                key = nnarc[1]
-                lst.append(key.upper())
+            key = nnarc[1]
+            lst.append(key.upper())
         for ooarc in oarc:
-                key = oarc[1]
-                lst.append(key.upper())
+            key = oarc[1]
+            lst.append(key.upper())
         return lst
 
 
 def check_split(key):
 
-	#url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
-	#url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
-	url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
-        print("The key for the check_split request is: " + str(key))
-	print("The URL for the check_split request is: " + str(url))
-	r = requests.head(url)
-	if r.status_code == 200:
-		split = r.headers.get('X-Scal-Attr-Is-Split',False)
-		return split
-	else:
-		return ("HTTP_NOK")
+    #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
+    #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
+    url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
+    print("The key for the check_split request is: " + str(key))
+    print("The URL for the check_split request is: " + str(url))
+    r = requests.head(url)
+    if r.status_code == 200:
+        split = r.headers.get('X-Scal-Attr-Is-Split',False)
+        return split
+    else:
+        return ("HTTP_NOK")
 
 def blob(row):
-	key = row._c2
-	split = check_split(key)
-	if split:
-		try:
-			header = {}
-			header['x-scal-split-policy'] = "raw"
-			#url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
-			#url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
-			url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
-			print("The key for the blob request is: " + str(key))
-			print("The URL for the blob request is: " + str(url))
-			r = requests.get(url,headers=header,stream=True)
-			if r.status_code == 200:
-				print("Status code: " + str(r.status_code))
-				chunks = ""
-				for chunk in r.iter_content(chunk_size=1024000000):
-					if chunk:
-						chunks=chunk+chunk
+    key = row._c2
+    split = check_split(key)
+    if split:
+        try:
+            header = {}
+            header['x-scal-split-policy'] = "raw"
+            #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
+            #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
+            url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
+            print("The key for the blob request is: " + str(key))
+            print("The URL for the blob request is: " + str(url))
+            r = requests.get(url,headers=header,stream=True)
+            if r.status_code == 200:
+                print("Status code: " + str(r.status_code))
+                chunks = ""
+                for chunk in r.iter_content(chunk_size=1024000000):
+                    if chunk:
+                        chunks=chunk+chunk
 
-				chunkshex =  chunks.encode('hex')
-				rtlst = []
-				for k in list(set(sparse(chunkshex))):
-					rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26]})
-				print("Status code 200, chunk iterated & size in response, returning rtlst")
-				return rtlst
-			else:
-				print("Status code: " + str(r.status_code))
-				return [{"key":key,"subkey":"NOK","digkey":"NOK"}]
+                chunkshex =  chunks.encode('hex')
+                rtlst = []
+                for k in list(set(sparse(chunkshex))):
+                    rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26]})
+                print("Status code 200, chunk iterated & size in response, returning rtlst")
+                return rtlst
+            else:
+                print("Status code: " + str(r.status_code))
+                return [{"key":key,"subkey":"NOK","digkey":"NOK"}]
 
-		except requests.exceptions.ConnectionError as e:
-			print("Connection Error")
-			return [{"key":key,"subkey":"NOK_HTTP","digkey":"NOK_HTTP"}]
-	elif split == False:
-		print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
-		return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
+        except requests.exceptions.ConnectionError as e:
+            print("Connection Error")
+            return [{"key":key,"subkey":"NOK_HTTP","digkey":"NOK_HTTP"}]
+    elif split == False:
+        print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
+        return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, 's3-' + RING)
 if PROT == 'file' and not os.path.exists(new_path):
-	os.mkdir(new_path)
+    os.mkdir(new_path)
 files = "%s://%s" % (PROT, new_path)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
