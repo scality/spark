@@ -44,7 +44,7 @@ ringkeys = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
 dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
 
-dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
+dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey").withColumnRenamed("_c4", "objectkey")
 
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 df_final = inner_join_false.select("ringkey")
