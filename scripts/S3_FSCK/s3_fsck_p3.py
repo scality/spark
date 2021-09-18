@@ -55,16 +55,12 @@ def statkey(row):
         url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
         r = requests.head(url)
         if r.status_code == 200:
-            # print("Status code: " + str(r.status_code))
             if re.search(arcdatakeypattern, key):
-                print("Match arc, multiplying by 12")
                 size = int(r.headers.get("X-Scal-Size", False))*12
             else:
-                print("Not match arc, using X-Scal-Size")
                 size = r.headers.get("X-Scal-Size",False)
             return ( key, r.status_code, size)
         else:
-            # print("Status code: " + str(r.status_code))
             return ( key, r.status_code, 0)
     except requests.exceptions.ConnectionError as e:
         return ( key, "HTTP_ERROR", 0)
