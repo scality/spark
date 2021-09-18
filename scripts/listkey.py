@@ -95,8 +95,7 @@ def listkeys(row, now):
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
             data.append(str(row.ip))
             data.append(str(row.chordport))
-            if not re.search(arcdatakeypattern, data[0]):
-            else:
+            if re.search(arcdatakeypattern, data[0]):
                 stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
                 for s in stat.findall("result"):
                     status = s.find("status").text
