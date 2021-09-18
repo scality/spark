@@ -28,7 +28,7 @@ ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell"
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
      .appName("s3_fsck_p4.py:Clean the extra keys :" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
