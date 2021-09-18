@@ -41,48 +41,39 @@ files = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 #list the ARC SPLIT main chunks
-df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1", "_c4", "_c5")
+df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
 print("df_split.show(): " )
 df_split.show()
 
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
 dfARCsingle = dfARCsingle.withColumn("ringkey", dfARCsingle["_c1"])
-# print("dfARCSINGLE.show(): " )
-# dfARCsingle.show()
 
 dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*20$"))
 dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
 dfCOSsingle = dfCOSsingle.withColumn("ringkey", dfCOSsingle["_c1"])
 dfCOSsingle = dfCOSsingle.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
-# print("dfCOCSingle.show(): " )
-# dfCOSsingle.show()
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
 #list the ARC SYNC KEYS
-df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1", "_c4", "_c5")
-print("df_sync.show(): " )
-df_sync.show()
+df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1")
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
-dfARCSYNC = dfARCSYNC.groupBy("_c1", "_c4", "_c5").count().filter("count > 3")
+dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
 dfARCSYNC = dfARCSYNC.withColumn("ringkey", dfARCSYNC["_c1"])
-dfARCSYNC = dfARCSYNC.withColumn("ip", dfARCSYNC["_c4"])
-dfARCSYNC = dfARCSYNC.withColumn("chordport", dfARCSYNC["_c5"])
 dfARCSYNC = dfARCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
-print("dfARCSYNC.show(): " )
-dfARCSYNC.show()
 
 dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*30$"))
 dfCOCSYNC = dfCOCSYNC.groupBy("_c1").count()
+dfCOCSYNC = dfCOCSYNC.groupBy("_c1", "_c4", "_c5").count()
 dfCOCSYNC = dfCOCSYNC.withColumn("ringkey", dfCOCSYNC["_c1"])
 dfCOCSYNC = dfCOCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
-# print("dfCOCSYNC.show(): " )
-# dfCOCSYNC.show()
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 dftotal = dfARCSYNC.union(dfARCsingle)
+dftotal = dftotal.join(df, dftotal.ringkey == df._c0).select(dftotal["*"],df["_c6"])
+dftotal.show()
 total = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
 dftotal.write.format("csv").mode("overwrite").options(header="true").save(total)
