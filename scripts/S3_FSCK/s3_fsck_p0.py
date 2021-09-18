@@ -82,9 +82,9 @@ def get_dig_key(name):
 
 def gen_md5_from_id(key):
     key = key.lstrip('0')
-        key = pad2(key)
-        int_b = to_bytes(key)
-        return get_dig_key(int_b)
+    key = pad2(key)
+    int_b = to_bytes(key)
+    return get_dig_key(int_b)
 
 
 def sparse(f):
