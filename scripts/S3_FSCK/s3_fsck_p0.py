@@ -95,25 +95,25 @@ def sparse(f):
     marc =  re.findall(r'(51d68800000014)([0-9-a-f]{40})',f)
     narc =  re.findall(r'(51d68800000013)([0-9-a-f]{38})',f)
     oarc =  re.findall(r'(51d68800000012)([0-9-a-f]{36})',f)
-        for mm in m:
-            key = mm[1]
-            lst.append(key.upper())
-        for nn in n:
-            key = nn[1]
-            lst.append(key.upper())
-        for oo in o:
-            key = oo[1]
-            lst.append(key.upper())
-        for mmarc in marc:
-            key = mmarc[1]
-            lst.append(key.upper())
-        for nnarc in narc:
-            key = nnarc[1]
-            lst.append(key.upper())
-        for ooarc in oarc:
-            key = oarc[1]
-            lst.append(key.upper())
-        return lst
+    for mm in m:
+        key = mm[1]
+        lst.append(key.upper())
+    for nn in n:
+        key = nn[1]
+        lst.append(key.upper())
+    for oo in o:
+        key = oo[1]
+        lst.append(key.upper())
+    for mmarc in marc:
+        key = mmarc[1]
+        lst.append(key.upper())
+    for nnarc in narc:
+        key = nnarc[1]
+        lst.append(key.upper())
+    for ooarc in oarc:
+        key = oarc[1]
+        lst.append(key.upper())
+    return lst
 
 
 def check_split(key):
