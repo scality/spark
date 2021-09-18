@@ -42,6 +42,8 @@ df = spark.read.format("csv").option("header", "false").option("inferSchema", "t
 
 #list the ARC SPLIT main chunks
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1", "_c4", "_c5")
+print("df_split.show(): " )
+df_split.show()
 
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
