@@ -21,15 +21,16 @@ else:
 
 PATH = cfg["path"]
 
-srebuildd_ip = cfg["srebuildd_ip"]
-srebuildd_path = cfg["srebuildd_single_path"]
-#srebuildd_path = cfg["srebuildd_double_path"]
-PROT = cfg['protocol']
-ACCESS_KEY = cfg['s3']['access_key']
-SECRET_KEY = cfg['s3']['secret_key']
-ENDPOINT_URL = cfg['s3']['endpoint']
+SREBUILDD_IP = cfg["srebuildd_ip"]
+SREBUILDD_PATH = cfg["srebuildd_single_path"]
+#SREBUILDD_PATH = cfg["srebuildd_double_path"]
+PROT = cfg["protocol"]
+ACCESS_KEY = cfg["s3"]["access_key"]
+SECRET_KEY = cfg["s3"]["secret_key"]
+ENDPOINT_URL = cfg["s3"]["endpoint"]
+PROTECTION = cfg["arc_protection"]
 
-ARC = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
@@ -74,7 +75,7 @@ def get_dig_key(name):
     oid = oid.zfill(16)
     volid = "00000000"
     svcid = "51"
-    specific = ARC['8+4'] #Make sure to change specific when the ARC schema changes
+    specific = arcindex[PROTECTION] #Make sure to change specific when the ARC schema changes
     cls = "70"
     key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
     return key.zfill(40)
@@ -119,7 +120,7 @@ def check_split(key):
 
     #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
     #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
-    url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
+    url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
     # print("The key for the check_split request is: " + str(key))
     # print("The URL for the check_split request is: " + str(url))
     r = requests.head(url)
@@ -138,7 +139,7 @@ def blob(row):
             header['x-scal-split-policy'] = "raw"
             #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
             #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
-            url = "http://%s:81/%s/%s" % ( srebuildd_ip, srebuildd_path, str(key.zfill(40)))
+            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
             # print("The key for the blob request is: " + str(key))
             # print("The URL for the blob request is: " + str(url))
             r = requests.get(url,headers=header,stream=True)

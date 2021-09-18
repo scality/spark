@@ -40,16 +40,17 @@ if len(sys.argv) >1:
 else:
         RING = cfg["ring"]
 
-user = cfg["sup"]["login"]
-password = cfg["sup"]["password"]
-url = cfg["sup"]["url"]
-cpath = cfg["path"]
-prot = cfg["protocol"]
-ACCESS_KEY = cfg['s3']['access_key']
-SECRET_KEY = cfg['s3']['secret_key']
-ENDPOINT_URL = cfg['s3']['endpoint']
-retention = cfg.get("retention",604800)
-path = "%s/listkeys-%#s.csv" % (cpath, RING)
+USER = cfg["sup"]["login"]
+PASSWORD = cfg["sup"]["password"]
+URL = cfg["sup"]["url"]
+CPATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
+ACCESS_KEY = cfg["s3"]["access_key"]
+SECRET_KEY = cfg["s3"]["secret_key"]
+ENDPOINT_URL = cfg["s3"]["endpoint"]
+RETENTION = cfg.get("retention", 604800)
+PATH = "%s/listkeys-%#s.csv" % (CPATH, RING)
+PROTECTION = cfg["arc_protection"]
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
@@ -67,24 +68,26 @@ spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
 
 s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwargs={'endpoint_url': ENDPOINT_URL})
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
-
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+print(PROTECTION)
+arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+# arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[PROTECTION] + '070')
 
 def prepare_path():
     try:
-        shutil.rmtree(path)
+        shutil.rmtree(PATH)
     except:
         pass
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
 
 def listkeys(row, now):
     # klist = []
-    n = DaemonFactory().get_daemon("node",login=user, passwd=password, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
-    fname = "%s/node-%s-%s.csv" % (path , row.ip, row.chordport )
-    if prot == 'file':
+    n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
+    fname = "%s/node-%s-%s.csv" % (PATH , row.ip, row.chordport)
+    if PROTOCOL == 'file':
         f = open(fname,"w+")
-    elif prot == 's3a':
+    elif PROTOCOL == 's3a':
         f = s3.open(fname, "ab")
     params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
     for k in n.listKeysIter(extra_params=params):
@@ -129,9 +132,9 @@ def listkeys(row, now):
 
     return [( row.ip, row.adminport, 'OK')]
 
-now = int(str(time.time()).split('.')[0]) - retention
+now = int(str(time.time()).split('.')[0]) - RETENTION
 prepare_path()
-s = Supervisor(url=url,login=user,passwd=password)
+s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
 print df.show(36,False)

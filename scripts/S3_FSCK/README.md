@@ -1,5 +1,13 @@
 # S3 object consistency check 
 
+## Requirements
+
+* Protection level must be defined in your configuration file for the ARC schema.
+
+```
+arc_protection: 8+4
+```
+
 
 ### Run a full listkeys of the customer DATA RING
 ```
