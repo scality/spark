@@ -17,6 +17,7 @@ RUN pip install pycurl
 RUN pip install kazoo
 RUN pip install pyzmq
 RUN pip install python-dateutil
+RUN pip install s3fs
 
 #RUN wget http://apache.mirror.anlx.net/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
 #COPY spark-2.4.3-bin-hadoop2.7.tgz /tmp/spark-2.4.3-bin-hadoop2.7.tgz
