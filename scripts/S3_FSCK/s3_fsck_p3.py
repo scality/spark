@@ -58,7 +58,7 @@ def statkey(row):
             # print("Status code: " + str(r.status_code))
             if re.search(arcdatakeypattern, key):
                 print("Match arc, multiplying by 12")
-                size = r.headers.get("X-Scal-Size", False)*12
+                size = int(r.headers.get("X-Scal-Size", False))*12
             else:
                 print("Not match arc, using X-Scal-Size")
                 size = r.headers.get("X-Scal-Size",False)
