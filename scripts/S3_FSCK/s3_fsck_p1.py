@@ -66,7 +66,7 @@ print("df_sync.show(): " )
 df_sync.show()
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
-dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
+dfARCSYNC = dfARCSYNC.groupBy("_c1", "_c4", "_c5").count().filter("count > 3")
 dfARCSYNC = dfARCSYNC.withColumn("ringkey", dfARCSYNC["_c1"])
 dfARCSYNC = dfARCSYNC.withColumn("ip", dfARCSYNC["_c4"])
 dfARCSYNC = dfARCSYNC.withColumn("chordport", dfARCSYNC["_c5"])
