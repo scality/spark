@@ -68,7 +68,7 @@ spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
 
 s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwargs={'endpoint_url': ENDPOINT_URL})
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
-print(PROTECTION)
+
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 # arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[PROTECTION] + '070')
