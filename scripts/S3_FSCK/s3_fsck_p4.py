@@ -20,8 +20,8 @@ else:
 
 PATH = cfg["path"]
 SREBUILDD_IP  = cfg["srebuildd_ip"]
-#SREBUILDD_PATH  = cfg["srebuildd_single_path"]
-SREBUILDD_PATH  = cfg["srebuildd_double_path"]
+SREBUILDD_PATH  = cfg["srebuildd_single_path"]
+#SREBUILDD_PATH  = cfg["srebuildd_double_path"]
 SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_PATH)
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
