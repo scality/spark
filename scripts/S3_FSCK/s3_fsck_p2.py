@@ -48,5 +48,5 @@ dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('ringkey','is_present','digkey')
 df_final = inner_join_false.select("ringkey")
-all = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
-df_final.write.format('csv').mode("overwrite").options(header='false').save(all)
+all_missing = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
+df_final.write.format('csv').mode("overwrite").options(header='false').save(all_missing)
