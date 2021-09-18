@@ -118,8 +118,8 @@ def listkeys(row, now):
                                     objectkeylist.append(raw)
                                 objectkey = ''.join(objectkeylist)
                                 data.append(str(objectkey))
-                else:
-                    data.append('Null')
+            else:
+                data.append('Null')
             data = ",".join(data)
             print >> f , data
 
