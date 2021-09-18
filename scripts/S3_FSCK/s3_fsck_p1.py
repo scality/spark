@@ -54,7 +54,7 @@ dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
 dfCOSsingle = dfCOSsingle.withColumn("ringkey", dfCOSsingle["_c1"])
 dfCOSsingle = dfCOSsingle.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
 print("dfCOCSingle.show(): " )
-dfCOCSingle.show()
+dfCOSsingle.show()
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
