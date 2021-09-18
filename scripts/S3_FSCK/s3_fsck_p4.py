@@ -50,9 +50,9 @@ def deletekey(row):
     try:
         url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
         print(url)
-        #r = requests.delete(url)
-        #status_code = r.status_code
-        status_code = "OK"
+        r = requests.delete(url)
+        status_code = r.status_code
+        #status_code = "OK"
         return ( key, status_code, url)
     except requests.exceptions.ConnectionError as e:
         return ( key,"ERROR_HTTP")
