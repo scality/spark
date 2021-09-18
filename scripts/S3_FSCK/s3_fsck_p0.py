@@ -35,7 +35,7 @@ arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 spark = SparkSession.builder \
-     .appName("s3_fsck_p0.py:Translate the S3 ARC keys :"+RING) \
+     .appName("s3_fsck_p0.py:Translate the S3 ARC keys :" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
      .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY) \
      .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY) \
