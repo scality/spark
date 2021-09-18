@@ -66,7 +66,6 @@ dfARCSYNC = dfARCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14
 
 dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*30$"))
 dfCOCSYNC = dfCOCSYNC.groupBy("_c1").count()
-dfCOCSYNC = dfCOCSYNC.groupBy("_c1", "_c4", "_c5").count()
 dfCOCSYNC = dfCOCSYNC.withColumn("ringkey", dfCOCSYNC["_c1"])
 dfCOCSYNC = dfCOCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
 
