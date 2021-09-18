@@ -56,11 +56,11 @@ def deletekey(row):
     except requests.exceptions.ConnectionError as e:
         return ( key,"ERROR_HTTP")
 
-files = "%s://%s/output/s3fsck/output-s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
+files = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.repartition(4)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
-deletedorphans = "%s://%s/output/s3fsck/output-deleted-s3-orphans-%s.csv" % (PROT, PATH, RING)
+deletedorphans = "%s://%s/output/s3fsck/deleted-s3-orphans-%s.csv" % (PROT, PATH, RING)
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
 
