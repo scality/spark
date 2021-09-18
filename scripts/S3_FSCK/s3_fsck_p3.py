@@ -73,9 +73,7 @@ rdd = df.rdd.map(statkey)
 #rdd1 = rdd.toDF()
 
 size_computed= rdd.map(lambda x: (2,int(x[2]))).reduceByKey(lambda x,y: x + y).collect()[0][1]
-string = "The total computed size of the not indexed RING 0 keys is: %d bytes" % size_computed
-print(string)
-string = "The total estimated size of all not indexed RING keys is: %d bytes" % (size_computed*12)
+string = "The total computed size of the not indexed keys is: %d bytes" % size_computed
 print(string)
 
 #totalsize = "file:///%s/output/s3fsck/output-size-computed-%s.csv" % (PATH, RING)
