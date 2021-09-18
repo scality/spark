@@ -72,7 +72,7 @@ dfCOCSYNC = dfCOCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 dftotal = dfARCSYNC.union(dfARCsingle)
-dftotal = dftotal.join(df, dftotal.ringkey == df._c0).select(dftotal["*"],df["_c6"])
+dftotal = dftotal.join(df, dftotal.ringkey == df._c0).select(dftotal["*"],df["_c4"])
 dftotal.show()
 total = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
 dftotal.write.format("csv").mode("overwrite").options(header="true").save(total)

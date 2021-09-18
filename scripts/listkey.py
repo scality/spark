@@ -93,8 +93,8 @@ def listkeys(row, now):
         if len(k.split(",")[0]) > 30 :
             #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
-            data.append(str(row.ip))
-            data.append(str(row.chordport))
+            # data.append(str(row.ip))
+            # data.append(str(row.chordport))
             if re.search(arcdatakeypattern, data[0]):
                 stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
                 for s in stat.findall("result"):
@@ -118,8 +118,8 @@ def listkeys(row, now):
                                     objectkeylist.append(raw)
                                 objectkey = ''.join(objectkeylist)
                                 data.append(str(objectkey))
-                        else:
-                            data.append('')
+                else:
+                    data.append('Null')
             data = ",".join(data)
             print >> f , data
 
