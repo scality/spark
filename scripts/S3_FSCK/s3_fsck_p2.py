@@ -8,7 +8,7 @@ import requests
 import yaml
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
-with open(config_path, 'r') as ymlfile:
+with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
@@ -18,13 +18,13 @@ else:
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
-ACCESS_KEY = cfg['s3']['access_key']
-SECRET_KEY = cfg['s3']['secret_key']
-ENDPOINT_URL = cfg['s3']['endpoint']
+ACCESS_KEY = cfg["s3"]["access_key"]
+SECRET_KEY = cfg["s3"]["secret_key"]
+ENDPOINT_URL = cfg["s3"]["endpoint"]
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
-     .appName("s3_fsck_p2.py:Union the S3 keys and the RING keys :"+RING) \
+     .appName("s3_fsck_p2.py:Union the S3 keys and the RING keys :" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
      .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY)\
      .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY)\
@@ -46,7 +46,7 @@ dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSch
 
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
-inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn('is_present', F.lit(int(0))).select('ringkey','is_present','digkey')
+inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey","is_present","digkey")
 df_final = inner_join_false.select("ringkey")
 allmissing = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
-df_final.write.format('csv').mode("overwrite").options(header='false').save(allmissing)
+df_final.write.format("csv").mode("overwrite").options(header="false").save(allmissing)

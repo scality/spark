@@ -6,7 +6,7 @@ import sys
 import yaml
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
-with open(config_path, 'r') as ymlfile:
+with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
@@ -16,11 +16,11 @@ else:
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
-ACCESS_KEY = cfg['s3']['access_key']
-SECRET_KEY = cfg['s3']['secret_key']
-ENDPOINT_URL = cfg['s3']['endpoint']
+ACCESS_KEY = cfg["s3"]["access_key"]
+SECRET_KEY = cfg["s3"]["secret_key"]
+ENDPOINT_URL = cfg["s3"]["endpoint"]
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
      .appName("s3_fsck_p1.py:Build RING keys :"+RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
@@ -71,4 +71,4 @@ dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 dftotal = dfARCSYNC.union(dfARCsingle)
 total = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
-dftotal.write.format('csv').mode("overwrite").options(header='true').save(total)
+dftotal.write.format("csv").mode("overwrite").options(header="true").save(total)

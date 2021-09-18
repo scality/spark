@@ -11,7 +11,7 @@ import base64
 import yaml
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
-with open(config_path, 'r') as ymlfile:
+with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
@@ -32,7 +32,7 @@ PROTECTION = cfg["arc_protection"]
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
+os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 spark = SparkSession.builder \
      .appName("s3_fsck_p0.py:Translate the S3 ARC keys :"+RING) \
@@ -52,8 +52,8 @@ spark = SparkSession.builder \
 
 
 def pad2(n):
-    x = '%s' % (n,)
-    return ('0' * (len(x) % 2)) + x
+    x = "%s" % (n,)
+    return ("0" * (len(x) % 2)) + x
 
 def to_bytes(h):
     return binascii.unhexlify(h)
@@ -81,7 +81,7 @@ def get_dig_key(name):
     return key.zfill(40)
 
 def gen_md5_from_id(key):
-    key = key.lstrip('0')
+    key = key.lstrip("0")
     key = pad2(key)
     int_b = to_bytes(key)
     return get_dig_key(int_b)
@@ -125,7 +125,7 @@ def check_split(key):
     # print("The URL for the check_split request is: " + str(url))
     r = requests.head(url)
     if r.status_code == 200:
-        split = r.headers.get('X-Scal-Attr-Is-Split',False)
+        split = r.headers.get("X-Scal-Attr-Is-Split",False)
         return split
     else:
         return ("HTTP_NOK")
@@ -136,7 +136,7 @@ def blob(row):
     if split:
         try:
             header = {}
-            header['x-scal-split-policy'] = "raw"
+            header["x-scal-split-policy"] = "raw"
             #url = "http://%s:81/rebuild/arc/%s" % (srebuildd_ip, str(key.zfill(40)))
             #url = "http://%s:81/rebuild/arc-DATA/%s" % (srebuildd_ip, str(key.zfill(40)))
             url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
@@ -150,7 +150,7 @@ def blob(row):
                     if chunk:
                         chunks=chunk+chunk
 
-                chunkshex =  chunks.encode('hex')
+                chunkshex =  chunks.encode("hex")
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
                     rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26]})
@@ -167,8 +167,8 @@ def blob(row):
         # print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
         return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
 
-new_path = os.path.join(PATH, 's3-' + RING)
-if PROT == 'file' and not os.path.exists(new_path):
+new_path = os.path.join(PATH, "s3-" + RING)
+if PROT == "file" and not os.path.exists(new_path):
     os.mkdir(new_path)
 files = "%s://%s" % (PROT, new_path)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
@@ -178,4 +178,4 @@ rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
 single = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROT, PATH, RING)
-dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
+dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)

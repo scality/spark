@@ -9,7 +9,7 @@ from pyspark import SparkContext
 
 
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
-with open(config_path, 'r') as ymlfile:
+with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
 
@@ -28,9 +28,9 @@ ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell"
 spark = SparkSession.builder \
-     .appName("s3_fsck_p4.py:Clean the extra keys :"+RING) \
+     .appName("s3_fsck_p4.py:Clean the extra keys :" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
      .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY)\
      .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY)\
@@ -41,7 +41,7 @@ spark = SparkSession.builder \
      .config("spark.driver.memory", cfg["spark.driver.memory"]) \
      .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
-     .config("spark.local.dir", cfg["path"]) \
+     .config("spark.local.dir", PATH) \
      .getOrCreate()
 
 def deletekey(row):
@@ -62,5 +62,5 @@ df = df.repartition(4)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
 deletedorphans = "%s://%s/output/s3fsck/deleted-s3-orphans-%s.csv" % (PROTOCOL, PATH, RING)
-rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
+rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)
 
