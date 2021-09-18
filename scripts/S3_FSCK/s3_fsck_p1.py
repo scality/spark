@@ -5,7 +5,7 @@ import os
 import sys
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+config_path = "%s/%s" % ( sys.path[0] , "../config/config.yml")
 with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -41,31 +41,31 @@ files = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 #list the ARC SPLIT main chunks
-df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
+df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1", "_c4", "_c5")
 
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
-dfARCsingle = dfARCsingle.withColumn("ringkey",dfARCsingle["_c1"])
+dfARCsingle = dfARCsingle.withColumn("ringkey", dfARCsingle["_c1"])
 
 dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*20$"))
 dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
-dfCOSsingle = dfCOSsingle.withColumn("ringkey",dfCOSsingle["_c1"])
-dfCOSsingle = dfCOSsingle.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfCOSsingle = dfCOSsingle.withColumn("ringkey", dfCOSsingle["_c1"])
+dfCOSsingle = dfCOSsingle.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
 #list the ARC SYNC KEYS
-df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1")
+df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1", "_c4", "_c5")
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
 dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
-dfARCSYNC = dfARCSYNC.withColumn("ringkey",dfARCSYNC["_c1"])
-dfARCSYNC = dfARCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfARCSYNC = dfARCSYNC.withColumn("ringkey", dfARCSYNC["_c1"])
+dfARCSYNC = dfARCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*20$"))
 dfCOCSYNC = dfCOCSYNC.groupBy("_c1").count()
-dfCOCSYNC = dfCOCSYNC.withColumn("ringkey",dfCOCSYNC["_c1"])
-dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfCOCSYNC = dfCOCSYNC.withColumn("ringkey", dfCOCSYNC["_c1"])
+dfCOCSYNC = dfCOCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 

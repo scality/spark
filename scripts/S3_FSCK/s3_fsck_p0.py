@@ -10,7 +10,7 @@ import hashlib
 import base64
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -89,12 +89,12 @@ def gen_md5_from_id(key):
 
 def sparse(f):
     lst  = []
-    m = re.findall(r'(200000000000014|20100000014)([0-9-a-f]{40})',f)
-    n = re.findall(r'(200000000000013|20100000013)([0-9-a-f]{38})',f)
-    o = re.findall(r'(200000000000012|20100000012)([0-9-a-f]{36})',f)
-    marc =  re.findall(r'(51d68800000014)([0-9-a-f]{40})',f)
-    narc =  re.findall(r'(51d68800000013)([0-9-a-f]{38})',f)
-    oarc =  re.findall(r'(51d68800000012)([0-9-a-f]{36})',f)
+    m = re.findall(r'(200000000000014|20100000014)([0-9-a-f]{40})', f)
+    n = re.findall(r'(200000000000013|20100000013)([0-9-a-f]{38})', f)
+    o = re.findall(r'(200000000000012|20100000012)([0-9-a-f]{36})', f)
+    marc =  re.findall(r'(51d68800000014)([0-9-a-f]{40})', f)
+    narc =  re.findall(r'(51d68800000013)([0-9-a-f]{38})', f)
+    oarc =  re.findall(r'(51d68800000012)([0-9-a-f]{36})', f)
     for mm in m:
         key = mm[1]
         lst.append(key.upper())
@@ -125,7 +125,7 @@ def check_split(key):
     # print("The URL for the check_split request is: " + str(url))
     r = requests.head(url)
     if r.status_code == 200:
-        split = r.headers.get("X-Scal-Attr-Is-Split",False)
+        split = r.headers.get("X-Scal-Attr-Is-Split", False)
         return split
     else:
         return ("HTTP_NOK")
@@ -142,7 +142,7 @@ def blob(row):
             url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
             # print("The key for the blob request is: " + str(key))
             # print("The URL for the blob request is: " + str(url))
-            r = requests.get(url,headers=header,stream=True)
+            r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
                 # print("Status code: " + str(r.status_code))
                 chunks = ""
@@ -153,19 +153,19 @@ def blob(row):
                 chunkshex =  chunks.encode("hex")
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
-                    rtlst.append({"key":key,"subkey":k,"digkey":gen_md5_from_id(k)[:26]})
+                    rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
                 # print("Status code 200, chunk iterated & size in response, returning rtlst")
                 return rtlst
             else:
                 # print("Status code: " + str(r.status_code))
-                return [{"key":key,"subkey":"NOK","digkey":"NOK"}]
+                return [{"key":key, "subkey":"NOK", "digkey":"NOK"}]
 
         except requests.exceptions.ConnectionError as e:
             # print("Connection Error")
-            return [{"key":key,"subkey":"NOK_HTTP","digkey":"NOK_HTTP"}]
+            return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
     elif split == False:
         # print("Split is false, returning: " + str(key) + " " + str(gen_md5_from_id(key)))
-        return [{"key":key,"subkey":"SINGLE","digkey":gen_md5_from_id(key)[:26]}]
+        return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, "s3-" + RING)
 if PROT == "file" and not os.path.exists(new_path):

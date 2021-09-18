@@ -7,7 +7,7 @@ import requests
 
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -46,7 +46,7 @@ dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSch
 
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
-inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey","is_present","digkey")
+inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 df_final = inner_join_false.select("ringkey")
 allmissing = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROT, PATH, RING)
 df_final.write.format("csv").mode("overwrite").options(header="false").save(allmissing)
