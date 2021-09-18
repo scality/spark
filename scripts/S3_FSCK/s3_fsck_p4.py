@@ -46,6 +46,7 @@ spark = SparkSession.builder \
 
 def deletekey(row):
     key = row._c0
+    key = row._c1
     try:
         url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
         print(url)
