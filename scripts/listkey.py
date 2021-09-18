@@ -31,7 +31,7 @@ else:
     ssl._create_default_https_context = _create_unverified_https_context
 
 
-config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
+config_path = "%s/%s" % ( sys.path[0], "config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -52,7 +52,7 @@ RETENTION = cfg.get("retention", 604800)
 PATH = "%s/listkeys-%#s.csv" % (CPATH, RING)
 PROTECTION = cfg["arc_protection"]
 
-spark = SparkSession.builder.appName("Generate Listkeys ring:"+RING) \
+spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
      .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY) \
      .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY) \
@@ -70,7 +70,6 @@ s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwa
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-# arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[PROTECTION] + '070')
 
 def prepare_path():
@@ -84,25 +83,20 @@ def prepare_path():
 def listkeys(row, now):
     # klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
-    fname = "%s/node-%s-%s.csv" % (PATH , row.ip, row.chordport)
+    fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
     if PROTOCOL == 'file':
-        f = open(fname,"w+")
+        f = open(fname, "w+")
     elif PROTOCOL == 's3a':
         f = s3.open(fname, "ab")
-    params = { "mtime_min":"123456789","mtime_max":now,"loadmetadata":"browse"}
+    params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
     for k in n.listKeysIter(extra_params=params):
         if len(k.split(",")[0]) > 30 :
             #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
-            print("Appending : " + str(row.ip) + str(row.chordport))
             data.append(str(row.ip))
             data.append(str(row.chordport))
-            # data.append(str(row.name))
-            # print("Going to check if data key: " + data[0])
             if not re.search(arcdatakeypattern, data[0]):
-                print("Regex did not match: " + data[0])
             else:
-                print("Regex match!")
                 stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
                 for s in stat.findall("result"):
                     status = s.find("status").text
@@ -137,7 +131,7 @@ prepare_path()
 s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
-print df.show(36,False)
+print df.show(36, False)
 dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 #dftowrite = dfnew.rdd.map(lambda x:make_array(x, now))
