@@ -83,9 +83,10 @@ def prepare_path():
         os.makedirs(PATH)
 
 
+
 def revlookupid(key, node):
     if re.search(arcdatakeypattern, key):
-        stat = node.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
+        stat = node.chunkapiStoreOp(op='stat', key=key, dso=RING, extra_params={'use_base64': '1'})
         for s in stat.findall("result"):
             status = s.find("status").text
             if status == "CHUNKAPI_STATUS_OK":
