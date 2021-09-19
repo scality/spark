@@ -56,12 +56,19 @@ def deletekey(row):
         return ( key, status_code, url)
     except requests.exceptions.ConnectionError as e:
         return ( key,"ERROR_HTTP")
-
-files = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROTOCOL, PATH, RING)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+allkeysfiles = "%s://%s/listkeys-%#s.csv" % (PROTOCOL, PATH, RING)
+missingfiles = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROTOCOL, PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
+df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
+df2 = df2.filter(df["_c0"].rlike(r".*70$"))
+df = df.join(df, df._c0 == df2._c0).select(df["*"],df2["_c4"])
+df = df.withColumnRenamed("_c0","ringkey").withColumnRenamed("_c1", "objectkey")
+df = df.drop("ringkey")
 df = df.repartition(4)
 rdd = df.rdd.map(deletekey).toDF()
-rdd.show(10,False)
+rdd.show(10, False)
 deletedorphans = "%s://%s/output/s3fsck/deleted-s3-orphans-%s.csv" % (PROTOCOL, PATH, RING)
+deletedorphans2 = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)
+rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans2)
 
