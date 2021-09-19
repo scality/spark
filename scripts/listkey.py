@@ -136,7 +136,7 @@ def listkeys(row, now):
                 status, objectkey = revlookupid(ringkey, n)
                 data.append(str(objectkey))
             else:
-                data.append(None)
+                data.append('0')
             # data.append(str(row.ip))
             # data.append(str(row.chordport))
             # if re.search(arcdatakeypattern, data[0]):
