@@ -116,10 +116,9 @@ def revlookupid(key, node):
 
 
 def listkeys(row, now):
-    # klist = []
+    klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
-    fname2 = "%s/node-%s-%s.csv" % (PATH2, row.ip, row.chordport)
     if PROTOCOL == 'file':
         f = open(fname, "w+")
         f2 = open(fname2, "w+")
@@ -127,9 +126,10 @@ def listkeys(row, now):
         f = s3.open(fname, "ab")
         f2 = s3.open(fname2, "ab")
     params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
+    # fullkeys = []
     for k in n.listKeysIter(extra_params=params):
         if len(k.split(",")[0]) > 30 :
-            #klist.append([k.rstrip().split(',')[i] for i in [0,1,2,3] ])
+            klist.append([ k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
             ringkey = data[0]
             if re.search(arcdatakeypattern, ringkey):
@@ -164,10 +164,12 @@ def listkeys(row, now):
             #                     data.append(str(objectkey))
             # else:
             #     data.append('Null')
+            fullkeys.append(data)
             data = ",".join(data)
             print >> f , data
+            print >> f2, data
 
-    return [( row.ip, row.adminport, 'OK')]
+    return [( row.ip, row.adminport, 'OK', klist)]
 
 now = int(str(time.time()).split('.')[0]) - RETENTION
 prepare_path()
@@ -179,4 +181,5 @@ dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
-#dfnew.write.format("csv").mode("overwrite").options(header="true").save(f2)
+# fname2 = "%s/node-%s-%s.csv" % (PATH2, row.ip, row.chordport)
+# dfnew.write.format("csv").mode("overwrite").options(header="true").save(fname2)

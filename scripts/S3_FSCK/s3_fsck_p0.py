@@ -24,7 +24,7 @@ PATH = cfg["path"]
 SREBUILDD_IP = cfg["srebuildd_ip"]
 SREBUILDD_PATH = cfg["srebuildd_single_path"]
 #SREBUILDD_PATH = cfg["srebuildd_double_path"]
-PROT = cfg["protocol"]
+PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
@@ -75,7 +75,7 @@ def get_dig_key(name):
     oid = oid.zfill(16)
     volid = "00000000"
     svcid = "51"
-    specific = arcindex[PROTECTION] #Make sure to change specific when the ARC schema changes
+    specific = arcindex[PROTECTION] #Make sure to set arc_protection in config when ARC schema changes
     cls = "70"
     key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
     return key.zfill(40)
@@ -154,16 +154,16 @@ def blob(row):
         return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, "s3-" + RING)
-if PROT == "file" and not os.path.exists(new_path):
+if PROTOCOL == "file" and not os.path.exists(new_path):
     os.mkdir(new_path)
-files = "%s://%s" % (PROT, new_path)
+files = "%s://%s" % (PROTOCOL, new_path)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
 df = df.repartition(4)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
-single = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROT, PATH, RING)
-single2 = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROT, PATH, RING)
+single = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROTOCOL, PATH, RING)
+single2 = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single2)
