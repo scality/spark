@@ -116,7 +116,7 @@ def revlookupid(key, node):
 
 
 def listkeys(row, now):
-    klist = []
+    # klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
     if PROTOCOL == 'file':
@@ -129,7 +129,7 @@ def listkeys(row, now):
     # fullkeys = []
     for k in n.listKeysIter(extra_params=params):
         if len(k.split(",")[0]) > 30 :
-            klist.append([ k.rstrip().split(',')[i] for i in [0,1,2,3] ])
+            # klist.append([ k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
             ringkey = data[0]
             if re.search(arcdatakeypattern, ringkey):
@@ -168,8 +168,8 @@ def listkeys(row, now):
             data = ",".join(data)
             print >> f , data
             # print >> f2, data
-
-    return [( row.ip, row.adminport, 'OK', klist)]
+    # return [(row.ip, row.adminport, 'OK', klist)]
+    return [( row.ip, row.adminport, 'OK')]
 
 now = int(str(time.time()).split('.')[0]) - RETENTION
 prepare_path()
