@@ -50,7 +50,7 @@ SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/listkeys-%#s.csv" % (CPATH, RING)
-PATH2 = "%s/%s/listkeys.csv" % (CPATH, RING)
+PATH2 = "%s://%s/%s/listkeys.csv" % (PROTOCOL, CPATH, RING)
 PROTECTION = cfg["arc_protection"]
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
@@ -182,5 +182,5 @@ listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
 
-fname2 = "%s/keys-per-node.csv" % (PATH2)
+fname2 = "%s/from-nodes.csv" % (PATH2)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(fname2)
