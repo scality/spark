@@ -63,7 +63,7 @@ df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "
 df = df.withColumnRenamed("_c0","ringkey")
 df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
 # df2 = df2.filter(df2["_c0"].rlike(r".*70$"))
-df2 = df2.filter(df2.digkey.contains("070"))
+# df2 = df2.filter(df2.digkey.contains("070"))
 # df = df.join(df, df._c0 == df2._c0).select(df["*"],df2["_c4"])
 df = df.join(df, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
 # df = df.withColumnRenamed("_c0","ringkey").withColumnRenamed("_c1", "objectkey")
