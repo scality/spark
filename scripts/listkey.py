@@ -50,6 +50,7 @@ SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/listkeys-%#s.csv" % (CPATH, RING)
+PATH2 = "%s/%s/listkeys.csv" % (CPATH, RING)
 PROTECTION = cfg["arc_protection"]
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
@@ -118,12 +119,13 @@ def listkeys(row, now):
     # klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
+    fname2 = "%s/%s/listkeys.csv" % (PATH2, row.ip, row.chordport)
     if PROTOCOL == 'file':
         f = open(fname, "w+")
-        # f2 = open(fname2, "w+")
+        f2 = open(fname2, "w+")
     elif PROTOCOL == 's3a':
         f = s3.open(fname, "ab")
-        # f2 = s3.open(fname2, "ab")
+        f2 = s3.open(fname2, "ab")
     params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
     # fullkeys = []
     for k in n.listKeysIter(extra_params=params):
@@ -166,7 +168,7 @@ def listkeys(row, now):
             # fullkeys.append(data)
             data = ",".join(data)
             print >> f , data
-            # print >> f2, data
+            print >> f2, data
     # return [(row.ip, row.adminport, 'OK', klist)]
     return [( row.ip, row.adminport, 'OK')]
 
