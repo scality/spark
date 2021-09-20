@@ -37,10 +37,8 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-files = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
-files2 = "%s://%s/%s/listkeys.csv" % (PROT, PATH, RING)
-# df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files2)
+files = "%s://%s/%s/listkeys.csv" % (PROT, PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 #list the ARC SPLIT main chunks
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
@@ -76,7 +74,5 @@ dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 dftotal = dfARCSYNC.union(dfARCsingle)
 dftotal = dftotal.join(df, dftotal.ringkey == df._c0).select(dftotal["*"],df["_c4"])
 dftotal.show()
-total = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
-total2 = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROT, PATH, RING)
+total = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROT, PATH, RING)
 dftotal.write.format("csv").mode("overwrite").options(header="true").save(total)
-dftotal.write.format("csv").mode("overwrite").options(header="true").save(total2)

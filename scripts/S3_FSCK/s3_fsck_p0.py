@@ -153,21 +153,18 @@ def blob(row):
     elif split == False:
         return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
 
-# new_path = os.path.join(PATH, "s3-" + RING)
+
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 if PROTOCOL == "file" and not os.path.exists(new_path):
     os.mkdir(new_path)
-# files = "%s://%s" % (PROTOCOL, new_path)
-files2 = "%s://%s" % (PROTOCOL, new_path)
 
-# df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files2)
+files = "%s://%s" % (PROTOCOL, new_path)
+
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
 df = df.repartition(4)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
-single = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROTOCOL, PATH, RING)
-single2 = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
+single = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)
-dfnew.write.format("csv").mode("overwrite").options(header="true").save(single2)

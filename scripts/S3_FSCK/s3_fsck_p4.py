@@ -45,7 +45,6 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 def deletekey(row):
-    # key = row._c0
     key = row.objectkey
     try:
         url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
@@ -56,30 +55,19 @@ def deletekey(row):
         return ( key, status_code, url)
     except requests.exceptions.ConnectionError as e:
         return ( key,"ERROR_HTTP")
-# missingfiles = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROTOCOL, PATH, RING)
-missingfiles2 = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
-# df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles2)
-# allkeysfiles = "%s://%s/listkeys-%#s.csv" % (PROTOCOL, PATH, RING)
-allkeysfiles2 = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
-# df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
-df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles2)
+missingfiles = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
+allkeysfiles = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
+df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
 df = df.withColumnRenamed("_c0","ringkey")
 df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
-# df2 = df2.filter(df2["_c0"].rlike(r".*70$"))
 df2 = df2.filter(df2.objectkey.contains("70"))
-# dfnew = df.join(df2, df._c0 == df2._c0).select(df["*"],df2["_c4"])
 dfnew = df.join(df2, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
-# df = df.withColumnRenamed("_c0","ringkey").withColumnRenamed("_c1", "objectkey")
-# df = df.withColumnRenamed("_c0","ringkey").withColumnRenamed("_c1", "objectkey")
-# df = df.drop("ringkey")
 dfnew = dfnew.drop("ringkey")
-# df = df.repartition(4)
+df = df.repartition(4)
 dfnew.show(100, False)
 rdd = dfnew.rdd.map(deletekey).toDF()
-rdd.show(10, False)
-deletedorphans = "%s://%s/output/s3fsck/deleted-s3-orphans-%s.csv" % (PROTOCOL, PATH, RING)
-deletedorphans2 = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
+rdd.show(100, False)
+deletedorphans = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)
-rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans2)
 #

@@ -49,8 +49,7 @@ ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
-PATH = "%s/listkeys-%#s.csv" % (CPATH, RING)
-PATH2 = "%s/%s/listkeys.csv" % (CPATH, RING)
+PATH = "%s/%s/listkeys.csv" % (CPATH, RING)
 PROTECTION = cfg["arc_protection"]
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
@@ -119,15 +118,11 @@ def listkeys(row, now):
     # klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
-    fname2 = "%s/node-%s-%s.csv" % (PATH2, row.ip, row.chordport)
     if PROTOCOL == 'file':
         f = open(fname, "w+")
-        f2 = open(fname2, "w+")
     elif PROTOCOL == 's3a':
         f = s3.open(fname, "ab")
-        f2 = s3.open(fname2, "ab")
     params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
-    # fullkeys = []
     for k in n.listKeysIter(extra_params=params):
         if len(k.split(",")[0]) > 30 :
             # klist.append([ k.rstrip().split(',')[i] for i in [0,1,2,3] ])
@@ -138,38 +133,8 @@ def listkeys(row, now):
                 data.append(str(objectkey))
             else:
                 data.append('0')
-            # data.append(str(row.ip))
-            # data.append(str(row.chordport))
-            # if re.search(arcdatakeypattern, data[0]):
-            #     stat = n.chunkapiStoreOp(op='stat', key=data[0], dso=RING, extra_params={'use_base64': '1'})
-            #     for s in stat.findall("result"):
-            #         status = s.find("status").text
-            #         if status == "CHUNKAPI_STATUS_OK":
-            #             usermd = s.find("usermd").text
-            #             if usermd is not None:
-            #                 use_base64 = False
-            #                 try:
-            #                     use_base64 = s.find("use_base64").text
-            #                     if int(use_base64) == 1:
-            #                         use_base64 = True
-            #                 except:
-            #                     pass
-            #                 if use_base64 is True:
-            #                     rawusermd = base64.b64decode(usermd)
-            #                     objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
-            #                     objectkeylist = []
-            #                     for x in objectkeyinbytes:
-            #                         raw = '{:02X}'.format(x)
-            #                         objectkeylist.append(raw)
-            #                     objectkey = ''.join(objectkeylist)
-            #                     data.append(str(objectkey))
-            # else:
-            #     data.append('Null')
-            # fullkeys.append(data)
             data = ",".join(data)
-            print >> f , data
-            print >> f2, data
-    # return [(row.ip, row.adminport, 'OK', klist)]
+            print >> f, data
     return [( row.ip, row.adminport, 'OK')]
 
 now = int(str(time.time()).split('.')[0]) - RETENTION
