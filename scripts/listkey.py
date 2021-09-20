@@ -164,7 +164,7 @@ def listkeys(row, now):
             #                     data.append(str(objectkey))
             # else:
             #     data.append('Null')
-            fullkeys.append(data)
+            # fullkeys.append(data)
             data = ",".join(data)
             print >> f , data
             print >> f2, data
