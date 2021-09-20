@@ -84,10 +84,11 @@ def prepare_path():
         os.makedirs(PATH)
 
 
+# TODO: Consider relocation of revlookupid into p4, combining findSuccessor calls. Ensure that the only object keys p4 has access to are ones from s3missing-objects.csv,
 
 def revlookupid(key, node):
     """
-    Method revlookupid takes a ring_data_key and node. As it's used during the listkey operations
+    Requires a ring_data_key and node. Currently used during listkey operations where node is always the keys successor
 
     """
     if re.search(arcdatakeypattern, key):
