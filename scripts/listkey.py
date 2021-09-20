@@ -119,7 +119,7 @@ def listkeys(row, now):
     # klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
-    fname2 = "%s/%s/listkeys.csv" % (PATH2, row.ip, row.chordport)
+    fname2 = "%s/node-%s-%s.csv" % (PATH2, row.ip, row.chordport)
     if PROTOCOL == 'file':
         f = open(fname, "w+")
         f2 = open(fname2, "w+")

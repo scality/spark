@@ -39,10 +39,15 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-s3keys = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROT, PATH, RING)
-ringkeys = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
-dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
-dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
+# s3keys = "%s://%s/output/s3fsck/s3-dig-keys-%s.csv" % (PROT, PATH, RING)
+s3keys2 = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROT, PATH, RING)
+# ringkeys = "%s://%s/output/s3fsck/input-arc-%s-keys.csv" % (PROT, PATH, RING)
+ringkeys2 = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROT, PATH, RING)
+
+# dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
+# dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
+dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys2)
+dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys2)
 
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 # dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey").withColumnRenamed("_c4", "objectkey")

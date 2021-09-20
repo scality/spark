@@ -66,8 +66,10 @@ def statkey(row):
         return ( key, "HTTP_ERROR", 0)
 
 
-files = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROTOCOL, PATH, RING)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+# files = "%s://%s/output/s3fsck/s3objects-missing-ring-%s.csv" % (PROTOCOL, PATH, RING)
+files2 = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
+# df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files2)
 rdd = df.rdd.map(statkey)
 
 #rdd1 = rdd.toDF()

@@ -38,7 +38,9 @@ spark = SparkSession.builder \
 
 
 files = "%s://%s/listkeys-%s.csv" % (PROT, PATH, RING)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
+files2 = "%s://%s/%s/listkeys.csv" % (PROT, PATH, RING)
+# df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files2)
 
 #list the ARC SPLIT main chunks
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
