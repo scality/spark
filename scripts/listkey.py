@@ -167,7 +167,7 @@ def listkeys(row, now):
             # fullkeys.append(data)
             data = ",".join(data)
             print >> f , data
-            print >> f2, data
+            # print >> f2, data
 
     return [( row.ip, row.adminport, 'OK', klist)]
 
