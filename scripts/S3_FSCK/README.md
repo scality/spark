@@ -68,3 +68,10 @@ http://127.0.0.1:81/rebuild/arc
 ```
 #/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/check_files_p4.py DATA
 ```
+
+## Output / Storage
+
+All files are written to a unified path in SOFS or S3 Buckets. The config,yml file defines the 
+PATH and the RING variables. All output from the below scripts will be found inside /${PATH}/${RING}.
+
+![Script Workflow Expected Output](https://raw.githubusercontent.com/scality/spark/improvement/s3-bucket-storage/scripts/S3_FSCK/s3fsck_workflow_diagram.png?token=AEIJKP6DWJA5N7VTVFGJIOTBKJGAC)
