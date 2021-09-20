@@ -40,6 +40,7 @@ if len(sys.argv) >1:
 else:
         RING = cfg["ring"]
 
+# CLI and Config derived arguments using CAPITALS
 USER = cfg["sup"]["login"]
 PASSWORD = cfg["sup"]["password"]
 URL = cfg["sup"]["url"]
@@ -51,6 +52,7 @@ ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/%s/listkeys.csv" % (CPATH, RING)
 PROTECTION = cfg["arc_protection"]
+PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
@@ -84,7 +86,12 @@ def prepare_path():
 
 
 def revlookupid(key, node):
+    """
+    Method revlookupid takes a ring_data_key and node. As it's used during the listkey operations
+
+    """
     if re.search(arcdatakeypattern, key):
+        # findSuccessor not needed as node passed is the one who reported the 70 key
         stat = node.chunkapiStoreOp(op='stat', key=key, dso=RING, extra_params={'use_base64': '1'})
         for s in stat.findall("result"):
             status = s.find("status").text
@@ -108,10 +115,14 @@ def revlookupid(key, node):
                         objectkey = ''.join(objectkeylist)
                     return status, objectkey
                 else:
-                    return "ERROR: No usermd found.", None
+                    status = "REVLOOKUPID ERROR: No usermd found."
+                    return status, None
                         # data.append(str(objectkey))
             else:
                 return status, None
+    else:
+        status = "REVLOOKUPID ERROR: The key provided was not a ring_data_key (70)"
+        return status, None
 
 
 def listkeys(row, now):
@@ -130,8 +141,13 @@ def listkeys(row, now):
             ringkey = data[0]
             if re.search(arcdatakeypattern, ringkey):
                 status, objectkey = revlookupid(ringkey, n)
-                data.append(str(objectkey))
+                if status == "CHUNKAPI_STATUS_OK":
+                    data.append(str(objectkey))
+                else:
+                    print status
+                    data.append('0')
             else:
+                print status
                 data.append('0')
             data = ",".join(data)
             print >> f, data
@@ -143,7 +159,8 @@ s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
 print df.show(36, False)
-dfnew = df.repartition(36)
+# dfnew = df.repartition(36)
+dfnew = df.repartition(PARTITIONS)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)

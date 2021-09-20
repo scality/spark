@@ -27,6 +27,7 @@ PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
+PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -57,17 +58,39 @@ def deletekey(row):
         return ( key,"ERROR_HTTP")
 missingfiles = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
+dfindex = df.index
+numberofrows = len(dfindex)
+string = "The starting number of not index objects is: %d objects" % numberofrows
+print(string)
+
 allkeysfiles = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
+df2index = df2.index
+numberofrows = len(df2index)
+string = "The starting number of total keys is: %d objects" % numberofrows
+print(string)
+
+
 df = df.withColumnRenamed("_c0","ringkey")
 df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
 df2 = df2.filter(df2.objectkey.contains("70"))
+df2index = df2.index
+numberofrows = len(df2index)
+string = "The filtered (70) number of total keys is: %d objects" % numberofrows
+print(string)
+
 dfnew = df.join(df2, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
+dfnewindex = dfnew.index
+numberofrows = len(dfnewindex)
+string = "The final combined number of keys/objects to delete is: %d objects" % numberofrows
+print(string)
+
 dfnew = dfnew.drop("ringkey")
-df = df.repartition(4)
-dfnew.show(100, False)
+# dfnew = dfnew.repartition(4)
+dfnew = dfnew.repartition(PARTITIONS)
+#dfnew.show(100, False)
 rdd = dfnew.rdd.map(deletekey).toDF()
-rdd.show(100, False)
+#rdd.show(100, False)
 deletedorphans = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)
 #

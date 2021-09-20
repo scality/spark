@@ -29,6 +29,7 @@ ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 PROTECTION = cfg["arc_protection"]
+PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
@@ -162,7 +163,8 @@ files = "%s://%s" % (PROTOCOL, new_path)
 
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
-df = df.repartition(4)
+# df = df.repartition(4)
+df = df.repartition(PARTITIONS)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 dfnew.show(1000)

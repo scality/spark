@@ -70,6 +70,10 @@ files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 rdd = df.rdd.map(statkey)
 
+dfindex = df.index
+numberofrows = len(dfindex)
+string = "The total number of not index objects is: %d objects" % numberofrows
+print(string)
 #rdd1 = rdd.toDF()
 
 size_computed= rdd.map(lambda x: (2,int(x[2]))).reduceByKey(lambda x,y: x + y).collect()[0][1]
