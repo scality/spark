@@ -121,10 +121,10 @@ def listkeys(row, now):
     fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
     if PROTOCOL == 'file':
         f = open(fname, "w+")
-        f2 = open(fname2, "w+")
+        # f2 = open(fname2, "w+")
     elif PROTOCOL == 's3a':
         f = s3.open(fname, "ab")
-        f2 = s3.open(fname2, "ab")
+        # f2 = s3.open(fname2, "ab")
     params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
     # fullkeys = []
     for k in n.listKeysIter(extra_params=params):
@@ -181,5 +181,6 @@ dfnew = df.repartition(36)
 listfullkeys = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfnew = listfullkeys.flatMap(lambda x: x).toDF()
 dfnew.show(1000)
-# fname2 = "%s/node-%s-%s.csv" % (PATH2, row.ip, row.chordport)
-# dfnew.write.format("csv").mode("overwrite").options(header="true").save(fname2)
+
+fname2 = "%s/keys-per-node.csv" % (PATH2)
+dfnew.write.format("csv").mode("overwrite").options(header="true").save(fname2)
