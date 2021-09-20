@@ -115,13 +115,13 @@ def revlookupid(key, node):
                         objectkey = ''.join(objectkeylist)
                     return status, objectkey
                 else:
-                    status = "REVLOOKUPID ERROR: No usermd found."
+                    status = "NOK"
                     return status, None
                         # data.append(str(objectkey))
             else:
                 return status, None
     else:
-        status = "REVLOOKUPID ERROR: The key provided was not a ring_data_key (70)"
+        status = "REVLOOKUPID NOK: The key provided was not a ring_data_key (70)"
         return status, None
 
 
@@ -144,10 +144,8 @@ def listkeys(row, now):
                 if status == "CHUNKAPI_STATUS_OK":
                     data.append(str(objectkey))
                 else:
-                    print status
-                    data.append('0')
+                    data.append('NOK')
             else:
-                print status
                 data.append('0')
             data = ",".join(data)
             print >> f, data
