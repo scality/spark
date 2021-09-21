@@ -59,23 +59,29 @@ def deletekey(row):
 missingfiles = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
 df.show()
+print "------------------------------------------------------------\n"
 print "DF Length: " + str(len(df.show()))
-
+print "------------------------------------------------------------\n"
 
 allkeysfiles = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
 df2.show()
+print "------------------------------------------------------------\n"
 print "DF2 Length: " + str(len(df2.show()))
-
+print "------------------------------------------------------------\n"
 
 
 df = df.withColumnRenamed("_c0","ringkey")
 df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
 df2 = df2.filter(df2.objectkey.contains("70"))
 df2.show()
+print "------------------------------------------------------------\n"
 print "DF2 filtered Length: " + str(len(df.show()))
+print "------------------------------------------------------------\n"
 dfnew = df.join(df2, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
-
+print "------------------------------------------------------------\n"
+print "DFNEW Length: " + str(len(df.show()))
+print "------------------------------------------------------------\n"
 
 dfnew = dfnew.drop("ringkey")
 # dfnew = dfnew.repartition(4)
