@@ -69,13 +69,13 @@ df2.show()
 
 df = df.withColumnRenamed("_c0","ringkey")
 df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
-df2 = df2.filter(df2.objectkey.contains("70"))
+#df2 = df2.filter(df2.objectkey.contains("70"))
 df2.show()
 
 dfnew = df.join(df2, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
 
 
-dfnew = dfnew.drop("ringkey")
+#dfnew = dfnew.drop("ringkey")
 # dfnew = dfnew.repartition(4)
 dfnew = dfnew.repartition(PARTITIONS)
 #dfnew.show(100, False)
