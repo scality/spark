@@ -79,6 +79,7 @@ As you'll notice the python virtualenv should not the needed to submit the jobs 
 [root@node01 scripts]# python submit.py -s FSCK/check_volume.py -r META
 ```
 
+:warning: **Submit the jobs exactly as shown above. Changes such as adding a ./ to sbumit.py or variables in the script name can cause loading errors**
 
 # Single local spark Deployment
 

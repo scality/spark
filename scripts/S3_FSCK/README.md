@@ -40,7 +40,7 @@ if your path was spark-results, and the ring was DATA, you would copy the file i
 ### Translate the ARC S3 keys to RING keys
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3fsck_files_p0.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3_fsck_p0.py DATA
 ```
 
 #### Make sure a driver ARC is properly configured on the spark config points to it
@@ -51,22 +51,22 @@ http://127.0.0.1:81/rebuild/arc
 ### Filter the listkeys to return only the SPROXY main_chunk + sproxyd single keys
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3fsck_files_p1.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3_fsck_p1.py DATA
 ```
 
 ### Return all the RING keys that are not indexed by S3
 ```
-#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3fsck_files_p2.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3_fsck_p2.py DATA
 ```
 
 ### Return all the capacity taken by the orphans RING keys that are not indexed by S3
 ```
-#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3fsck_files_p3.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3_fsck_p3.py DATA
 ```
 
 ### Remove all the RING keys that are not indexed by S3
 ```
-#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3fsck_files_p4.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/S3_FSCK/s3_fsck_p4.py DATA
 ```
 
 ## Output / Storage
