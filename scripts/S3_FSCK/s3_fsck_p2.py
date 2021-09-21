@@ -49,10 +49,6 @@ dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 df_final = inner_join_false.select("ringkey")
-df_finalindex = df_final.index
-numberofrows = len(df_finalindex)
-string = "The final number of not indexed objects is: %d objects" % numberofrows
-print(string)
 
 allmissing = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROT, PATH, RING)
 df_final.write.format("csv").mode("overwrite").options(header="false").save(allmissing)
