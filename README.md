@@ -76,7 +76,7 @@ As you'll notice the python virtualenv should not the needed to submit the jobs 
 
 ``` 
 [root@node01 ~]# cd /root/spark/scripts/
-[root@node01 scripts]# python submit.py -s FSCK/check_volume.py -r META
+[root@node01 scripts]# python submit.py -s SOFS_FSCK/check_volume.py -r META
 ```
 
 :warning: **Submit the jobs exactly as shown above. Changes such as adding a ./ to submit.py (ie. python ./submit.py) or
