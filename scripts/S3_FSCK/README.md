@@ -42,7 +42,11 @@ This method may error if the file being uploaded as a stream exceeds 5GB. This c
 --expected-size flag so aws knows the expected size of the file and can calculate the correct size and qty of MPUs for 
 the upload. The average line per object is around 100bytes, for a long bucket name this might be 128bytes per object. 
 The example below of s3api shows how to count the quantity of objects per bucket, which can be used to help calculate
-the --expected-size to provide.
+the --expected-size to provide. 
+
+With a bucket name of 10 characters or less every object will produce a line of output of 100 bytes or less (depends
+on the length of the nodes IP Address). So 5GB will be reached/exceeded when a bucket name has length of 10 characters and
+50Million objects inside it.
 
 ```
 aws s3api list-objects --bucket <BUCKET_NAME> --output json --query "[length(Contents[])]"

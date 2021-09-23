@@ -1,7 +1,9 @@
 master: ""
 ring: "DATA"
 path: "/fs/spark/"
-protocol: file
+protocol: file      # Protocol can be either file or s3a.
+# Protocol file requires SOFS+DLM & path is the folder to write to within the SOFS volume.
+# Protocol s3a requires access/secret keys & endpoint URL & path is the bucket name within s3 to use.
 srebuildd_ip: "127.0.0.1"
 srebuildd_path: "/rebuild/chord"
 srebuildd_single_path: "rebuild/arc-DATA"
