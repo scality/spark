@@ -30,7 +30,7 @@ arc_protection: 8+4
 
 #### When using s3 protocol
 Configure your aws cli client to work from the same host you run the docker container on. This allows the ability
-to stream the data from the container directory into the bucket. If required change the below example to define any
+to stream the data from the container durectly into the bucket. If required change the below example to define any
 values that are not stored in your aws configuration. For example setting the profile if its not the default, or 
 setting the endpoint url to use:
 ```
