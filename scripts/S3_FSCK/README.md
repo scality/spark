@@ -31,7 +31,7 @@ arc_protection: 8+4
 #### When using s3 protocol
 Configure your aws cli client to work from the same host you run the docker container on. This allows the ability
 to stream the data from the container durectly into the bucket. If required change the below example to define any
-values that are not stored in your aws configuration. For example setting the profile if its not the default, or 
+values that are not stored in your aws configuration. For example setting the profile if it's not the default, or 
 setting the endpoint url to use:
 ```
 #docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 | aws s3 cp - s3://$(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
