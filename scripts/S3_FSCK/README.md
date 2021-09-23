@@ -32,14 +32,21 @@ arc_protection: 8+4
 Configure your aws cli client to work from the same host you run the docker container on. This allows the ability
 to stream the data from the container durectly into the bucket. If required change the below example to define any
 values that are not stored in your aws configuration. For example setting the profile if it's not the default, or 
-setting the endpoint url to use:
+setting the endpoint url to use.
+
+
 ```
 #docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 | aws s3 cp - s3://$(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
 ```
-If you use the s3a protocol to use bucket storage, copy the output from the keys.txt file into the bucket. For instance
-if your path was spark-results, and the ring was DATA, you would copy the file into the bucket like so:
+This method may error if the file being uploaded as a stream exceeds 5GB. This can be mitigated by using the 
+--expected-size flag so aws knows the expected size of the file and can calculate the correct size and qty of MPUs for 
+the upload. The average line per object is around 100bytes, for a long bucket name this might be 128bytes per object. 
+The example below of s3api shows how to count the quantity of objects per bucket, which can be used to help calculate
+the --expected-size to provide.
 
-`aws --endpoint=http://<Endpoint_IP> s3 cp /tmp/keys.txt s3://spark-results/DATA/s3-bucketd/keys.txt`
+```
+aws s3api list-objects --bucket <BUCKET_NAME> --output json --query "[length(Contents[])]"
+```
 
 
 ####Bonus Track you could do it per buckets
