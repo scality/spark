@@ -22,10 +22,20 @@ arc_protection: 8+4
 ```
 
 ### Run the image locally on a S3 connector or specify the bucketD url
+
+#### When using file protocol
 ```
-#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 > $(spar_dir_path)/<RING_NAME>>/s3-bucketd/keys.txt
+#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 > $(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
 ```
 
+#### When using s3 protocol
+Configure your aws cli client to work from the same host you run the docker container on. This allows the ability
+to stream the data from the container directory into the bucket. If required change the below example to define any
+values that are not stored in your aws configuration. For example setting the profile if its not the default, or 
+setting the endpoint url to use:
+```
+#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 | aws s3 cp - s3://$(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
+```
 If you use the s3a protocol to use bucket storage, copy the output from the keys.txt file into the bucket. For instance
 if your path was spark-results, and the ring was DATA, you would copy the file into the bucket like so:
 
