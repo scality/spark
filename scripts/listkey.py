@@ -4,10 +4,7 @@ import shutil
 import requests
 import time
 requests.packages.urllib3.disable_warnings()
-import re
 import s3fs
-import struct
-import base64
 
 from pyspark.sql import SparkSession, Row, SQLContext
 from pyspark import SparkContext
@@ -51,7 +48,6 @@ SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/%s/listkeys.csv" % (CPATH, RING)
-ARC = cfg["arc_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
@@ -71,10 +67,6 @@ spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
 s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwargs={'endpoint_url': ENDPOINT_URL})
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
-arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[ARC] + '070')
-
-
 def prepare_path():
     try:
         shutil.rmtree(PATH)
@@ -82,49 +74,6 @@ def prepare_path():
         pass
     if not os.path.exists(PATH):
         os.makedirs(PATH)
-
-
-# TODO: Consider relocation of revlookupid into p4, combining findSuccessor calls. Ensure that the only object keys p4 has access to are ones from s3missing-objects.csv,
-
-def revlookupid(key, node):
-    """
-    Requires a ring_data_key and node. Currently used during listkey operations where node is always the keys successor
-
-    """
-    if re.search(arcdatakeypattern, key):
-        # findSuccessor not needed as node passed is the one who reported the 70 key
-        stat = node.chunkapiStoreOp(op='stat', key=key, dso=RING, extra_params={'use_base64': '1'})
-        for s in stat.findall("result"):
-            status = s.find("status").text
-            if status == "CHUNKAPI_STATUS_OK":
-                usermd = s.find("usermd").text
-                if usermd is not None:
-                    use_base64 = False
-                    try:
-                        use_base64 = s.find("use_base64").text
-                        if int(use_base64) == 1:
-                            use_base64 = True
-                    except:
-                        pass
-                    if use_base64 is True:
-                        rawusermd = base64.b64decode(usermd)
-                        objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
-                        objectkeylist = []
-                        for x in objectkeyinbytes:
-                            raw = '{:02X}'.format(x)
-                            objectkeylist.append(raw)
-                        objectkey = ''.join(objectkeylist)
-                    return status, objectkey
-                else:
-                    status = "NOK"
-                    return status, None
-                        # data.append(str(objectkey))
-            else:
-                return status, None
-    else:
-        status = "REVLOOKUPID NOK: The key provided was not a ring_data_key (70)"
-        return status, None
-
 
 def listkeys(row, now):
     # klist = []

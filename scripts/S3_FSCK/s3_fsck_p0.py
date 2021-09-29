@@ -10,8 +10,8 @@ import hashlib
 import base64
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
-with open(config_path, "r") as ymlfile:
+config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
@@ -53,8 +53,8 @@ spark = SparkSession.builder \
 
 
 def pad2(n):
-    x = "%s" % (n,)
-    return ("0" * (len(x) % 2)) + x
+    x = '%s' % (n,)
+    return ('0' * (len(x) % 2)) + x
 
 def to_bytes(h):
     return binascii.unhexlify(h)
@@ -79,7 +79,6 @@ def get_dig_key(name):
     specific = arcindex[ARC] #Make sure to set arc_protection in config when ARC schema changes
     cls = "70"
     key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
-    print "get_dig_key key.zfill: " + str(key.zfill(40))
     return key.zfill(40)
 
 def gen_md5_from_id(key):
@@ -133,17 +132,16 @@ def blob(row):
     if split:
         try:
             header = {}
-            header["x-scal-split-policy"] = "raw"
+            header['x-scal-split-policy'] = "raw"
             url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
             r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
-                string = "SPLIT AND SUCCESS ON SPLIT-POLICY HEADER"
                 chunks = ""
                 for chunk in r.iter_content(chunk_size=1024000000):
                     if chunk:
                         chunks = chunk+chunk
 
-                chunkshex = chunks.encode("hex")
+                chunkshex = chunks.encode('hex')
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
                     rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
@@ -162,10 +160,9 @@ files = "%s://%s" % (PROTOCOL, new_path)
 
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
 
-# df = df.repartition(4)
 df = df.repartition(PARTITIONS)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
-dfnew.show(1000)
+
 single = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)
