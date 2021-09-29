@@ -17,7 +17,7 @@ else:
     RING = cfg["ring"]
 
 PATH = cfg["path"]
-PROT = cfg["protocol"]
+PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
@@ -39,8 +39,8 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-s3keys = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROT, PATH, RING)
-ringkeys = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROT, PATH, RING)
+s3keys = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
+ringkeys = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROTOCOL, PATH, RING)
 
 dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
@@ -50,5 +50,5 @@ dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 df_final = inner_join_false.select("ringkey")
 
-allmissing = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROT, PATH, RING)
+allmissing = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 df_final.write.format("csv").mode("overwrite").options(header="false").save(allmissing)

@@ -22,13 +22,13 @@ else:
 PATH = cfg["path"]
 
 SREBUILDD_IP = cfg["srebuildd_ip"]
-SREBUILDD_PATH = cfg["srebuildd_single_path"]
-#SREBUILDD_PATH = cfg["srebuildd_double_path"]
+SREBUILDD_ARC_PATH = cfg["srebuildd_arc_path"]
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
-PROTECTION = cfg["arc_protection"]
+ARC = cfg["arc_protection"]
+COS = cfg["cos_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
@@ -76,9 +76,10 @@ def get_dig_key(name):
     oid = oid.zfill(16)
     volid = "00000000"
     svcid = "51"
-    specific = arcindex[PROTECTION] #Make sure to set arc_protection in config when ARC schema changes
+    specific = arcindex[ARC] #Make sure to set arc_protection in config when ARC schema changes
     cls = "70"
     key = hash_str.upper() + oid.upper() + volid + svcid + specific + cls
+    print "get_dig_key key.zfill: " + str(key.zfill(40))
     return key.zfill(40)
 
 def gen_md5_from_id(key):
@@ -118,7 +119,7 @@ def sparse(f):
 
 
 def check_split(key):
-    url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
+    url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
         split = r.headers.get("X-Scal-Attr-Is-Split", False)
@@ -133,15 +134,16 @@ def blob(row):
         try:
             header = {}
             header["x-scal-split-policy"] = "raw"
-            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_PATH, str(key.zfill(40)))
+            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
             r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
+                string = "SPLIT AND SUCCESS ON SPLIT-POLICY HEADER"
                 chunks = ""
                 for chunk in r.iter_content(chunk_size=1024000000):
                     if chunk:
-                        chunks=chunk+chunk
+                        chunks = chunk+chunk
 
-                chunkshex =  chunks.encode("hex")
+                chunkshex = chunks.encode("hex")
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
                     rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
@@ -156,9 +158,6 @@ def blob(row):
 
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
-if PROTOCOL == "file" and not os.path.exists(new_path):
-    os.mkdir(new_path)
-
 files = "%s://%s" % (PROTOCOL, new_path)
 
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)

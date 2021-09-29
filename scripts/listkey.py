@@ -51,7 +51,7 @@ SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/%s/listkeys.csv" % (CPATH, RING)
-PROTECTION = cfg["arc_protection"]
+ARC = cfg["arc_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
@@ -72,7 +72,7 @@ s3 = s3fs.S3FileSystem(anon=False, key=ACCESS_KEY, secret=SECRET_KEY, client_kwa
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[PROTECTION] + '070')
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[ARC] + '070')
 
 
 def prepare_path():
@@ -139,15 +139,6 @@ def listkeys(row, now):
         if len(k.split(",")[0]) > 30 :
             # klist.append([ k.rstrip().split(',')[i] for i in [0,1,2,3] ])
             data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
-            ringkey = data[0]
-            if re.search(arcdatakeypattern, ringkey):
-                status, objectkey = revlookupid(ringkey, n)
-                if status == "CHUNKAPI_STATUS_OK":
-                    data.append(str(objectkey))
-                else:
-                    data.append('NOK')
-            else:
-                data.append('0')
             data = ",".join(data)
             print >> f, data
     return [( row.ip, row.adminport, 'OK')]

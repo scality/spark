@@ -4,8 +4,15 @@ import requests
 import yaml
 import re
 import sys
+import struct
+import base64
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
+
+from scality.supervisor import Supervisor
+from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
+from scality.key import Key
+from scality.storelib.storeutils import uks_parse
 
 
 config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
@@ -18,16 +25,25 @@ if len(sys.argv) >1:
 else:
     RING = cfg["ring"]
 
+USER = cfg["sup"]["login"]
+PASSWORD = cfg["sup"]["password"]
+URL = cfg["sup"]["url"]
 PATH = cfg["path"]
 SREBUILDD_IP  = cfg["srebuildd_ip"]
-SREBUILDD_PATH  = cfg["srebuildd_single_path"]
-#SREBUILDD_PATH  = cfg["srebuildd_double_path"]
-SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_PATH)
+SREBUILDD_ARC_PATH  = cfg["srebuildd_arc_path"]
+SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH)
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
+ARC = cfg["arc_protection"]
+
+arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[ARC] + '070$')
+
+s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
+listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -45,41 +61,106 @@ spark = SparkSession.builder \
      .config("spark.local.dir", PATH) \
      .getOrCreate()
 
+
+def findsuccessor(key, node):
+    """
+    Performs an arc reverse lookup id to obtain the arc stripes object key.
+    REQUIREMENTS:
+    key: A ring_data_key (arc 70)
+    node: node from a DaemonFactory().get_daemon("node") assignment
+    ring: Name of the ring to perform lookup in.
+    """
+    print "findsuccessor key: " + str(key)
+    successor = node.findSuccessor(key)
+    status = successor['status']
+    if status:
+        ip, chordport = successor['address'].split(':')
+        mynode = [x for x in listm if ip in x['ip'] and chordport in x['chordport']]
+        adminport = mynode[0]['adminport']
+        return (status, ip, adminport, chordport)
+    else:
+        return status, None, None, None
+
+
+def revlookupid(ringkey, nodelist, ring):
+    """
+    Performs an arc reverse lookup id to obtain the arc stripes object key.
+    REQUIREMENTS:
+    ringkey: A ring_data_key (arc 70)
+    nodelist: list of nodes returned from DaemonFactory().get_daemon("node")
+    ring: Name of the ring to perform lookup in.
+    """
+    ip = nodelist[0]['ip']
+    adminport = nodelist[0]['adminport']
+    chordport = nodelist[0]['chordport']
+    lookupnode = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(ip, adminport), chord_addr=ip, chord_port=chordport, dso=ring)
+    status, successorip, successoradminport, successorchordport = findsuccessor(ringkey, lookupnode)
+    if status:
+        node = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(successorip, successoradminport), chord_addr=successorip, chord_port=successorchordport, dso=ring)
+        stat = node.chunkapiStoreOp(op='stat', key=ringkey, dso=RING, extra_params={'use_base64': '1'})
+        for s in stat.findall("result"):
+            status = s.find("status").text
+            if status == "CHUNKAPI_STATUS_OK":
+                usermd = s.find("usermd").text
+                if usermd is not None:
+                    use_base64 = False
+                    try:
+                        use_base64 = s.find("use_base64").text
+                        if int(use_base64) == 1:
+                            use_base64 = True
+                    except:
+                        pass
+                    if use_base64 is True:
+                        rawusermd = base64.b64decode(usermd)
+                        if re.search(arcdatakeypattern, ringkey):
+                            objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[21:41])
+                        else:
+                            objectkeyinbytes = struct.unpack(">BBBBBBBBBBBBBBBBBBBB", rawusermd[03:23])
+                        objectkeylist = []
+                        for x in objectkeyinbytes:
+                            raw = '{:02X}'.format(x)
+                            objectkeylist.append(raw)
+                        objectkey = ''.join(objectkeylist)
+                        while objectkey.endswith('00'):
+                            objectkey = objectkey[:-2].zfill(40)
+                        print "revlookupid returning objectkey: " + str(objectkey)
+                    return (status, objectkey)
+                else:
+                    status = "NOK: usermd is None"
+                    return (status, None)
+            else:
+                return (status, None)
+    else:
+        status = 'NOK: findsuccessor status False'
+        return (status, None)
+
+
 def deletekey(row):
-    key = row.objectkey
-    try:
-        url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
-        print(url)
-        r = requests.delete(url)
-        status_code = r.status_code
-        #status_code = "OK"
-        return ( key, status_code, url)
-    except requests.exceptions.ConnectionError as e:
-        return ( key,"ERROR_HTTP")
-missingfiles = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(missingfiles)
-df.show()
-
-
-allkeysfiles = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
-df2 = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(allkeysfiles)
-df2.show()
+    key = row.ringkey
+    url = ''
+    status, objectkey = revlookupid(key, listm, RING)
+    print "deletekey revlookupid status: " + str(status)
+    print "deletekey revlookupud objectkey: " + str(objectkey)
+    if status and re.search(r'.*20$', str(objectkey)):
+        url = "%s/%s" % (SREBUILDD_URL, str(objectkey.zfill(40)))
+        try:
+            r = requests.delete(url)
+            status_code = r.status_code
+            return ( key, status_code, url)
+        except requests.exceptions.ConnectionError as e:
+            return ( key, "ERROR_HTTP", url)
+    else:
+        return ( key, "ERROR_LOOKUP", url)
 
 
 
+
+
+
+files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.withColumnRenamed("_c0","ringkey")
-df2 = df2.withColumnRenamed("_c0","digkey").withColumnRenamed("_c4", "objectkey")
-#df2 = df2.filter(df2.objectkey.contains("70"))
-df2.show()
-
-dfnew = df.join(df2, df.ringkey == df2.digkey).select(df["*"],df2["objectkey"])
-
-
-#dfnew = dfnew.drop("ringkey")
-# dfnew = dfnew.repartition(4)
-dfnew = dfnew.repartition(PARTITIONS)
-#dfnew.show(100, False)
-rdd = dfnew.rdd.map(deletekey).toDF()
-#rdd.show(100, False)
+df = df.repartition(PARTITIONS)
+rdd = df.rdd.map(deletekey).toDF()
 deletedorphans = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)

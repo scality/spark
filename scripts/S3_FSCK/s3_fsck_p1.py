@@ -5,8 +5,8 @@ import os
 import sys
 import yaml
 
-config_path = "%s/%s" % ( sys.path[0] , "../config/config.yml")
-with open(config_path, "r") as ymlfile:
+config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
+with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 if len(sys.argv) >1:
@@ -15,10 +15,11 @@ else:
     RING = cfg["ring"]
 
 PATH = cfg["path"]
-PROT = cfg["protocol"]
+PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
+COS = cfg["cos_protection"]
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -37,22 +38,20 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-files = "%s://%s/%s/listkeys.csv" % (PROT, PATH, RING)
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 #list the ARC SPLIT main chunks
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
-print("df_split.show(): " )
-df_split.show()
 
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
-dfARCsingle = dfARCsingle.withColumn("ringkey", dfARCsingle["_c1"])
+dfARCsingle = dfARCsingle.withColumn("ringkey",dfARCsingle["_c1"])
 
-dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*20$"))
+dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*" + str(COS) + "0$"))
 dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
-dfCOSsingle = dfCOSsingle.withColumn("ringkey", dfCOSsingle["_c1"])
-dfCOSsingle = dfCOSsingle.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfCOSsingle = dfCOSsingle.withColumn("ringkey",dfCOSsingle["_c1"])
+dfCOSsingle = dfCOSsingle.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
@@ -61,18 +60,16 @@ df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike(
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
 dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
-dfARCSYNC = dfARCSYNC.withColumn("ringkey", dfARCSYNC["_c1"])
-dfARCSYNC = dfARCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfARCSYNC = dfARCSYNC.withColumn("ringkey",dfARCSYNC["_c1"])
+dfARCSYNC = dfARCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
 
-dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*30$"))
+dfCOCSYNC = df_sync.filter(df["_c1"].rlike(r".*" + str(COS) + "0$"))
 dfCOCSYNC = dfCOCSYNC.groupBy("_c1").count()
-dfCOCSYNC = dfCOCSYNC.withColumn("ringkey", dfCOCSYNC["_c1"])
-dfCOCSYNC = dfCOCSYNC.withColumn("_c1", F.expr("substring(_c1, 1, length(_c1)-14)"))
+dfCOCSYNC = dfCOCSYNC.withColumn("ringkey",dfCOCSYNC["_c1"])
+dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)"))
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 dftotal = dfARCSYNC.union(dfARCsingle)
-dftotal = dftotal.join(df, dftotal.ringkey == df._c0).select(dftotal["*"],df["_c4"])
-dftotal.show()
-total = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROT, PATH, RING)
+total = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROTOCOL, PATH, RING)
 dftotal.write.format("csv").mode("overwrite").options(header="true").save(total)

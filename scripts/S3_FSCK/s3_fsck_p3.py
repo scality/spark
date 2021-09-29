@@ -6,7 +6,7 @@ import re
 import sys
 from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
-import pyspark.sql.functions as F     
+import pyspark.sql.functions as F
 
 config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
@@ -24,9 +24,10 @@ ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
 SREBUILDD_IP  = cfg["srebuildd_ip"]
-SREBUILDD_PATH  = cfg["srebuildd_double_path"]
-SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_PATH)
-PROTECTION = cfg["arc_protection"]
+SREBUILDD_ARCDATA_PATH  = cfg["srebuildd_arcdata_path"]
+SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_ARCDATA_PATH)
+ARC = cfg["arc_protection"]
+COS = cfg["cos_protection"]
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -46,7 +47,7 @@ spark = SparkSession.builder \
 
 
 arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[PROTECTION] + "070")
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{31}' + arcindex[ARC] + "070")
 
 
 def statkey(row):
@@ -58,7 +59,7 @@ def statkey(row):
             if re.search(arcdatakeypattern, key):
                 size = int(r.headers.get("X-Scal-Size", False))*12
             else:
-                size = r.headers.get("X-Scal-Size",False)
+                size = int(r.headers.get("X-Scal-Size",False)) + int(r.headers.get("X-Scal-Size",False))*int(COS)
             return ( key, r.status_code, size)
         else:
             return ( key, r.status_code, 0)
@@ -74,7 +75,8 @@ rdd = df.rdd.map(statkey)
 
 size_computed= rdd.map(lambda x: (2,int(x[2]))).reduceByKey(lambda x,y: x + y).collect()[0][1]
 string = "The total computed size of the not indexed keys is: %d bytes" % size_computed
-print(string)
+banner = '\n' + '-' * len(string) + '\n'
+print(banner + string + banner)
 
 #totalsize = "file:///%s/output/s3fsck/output-size-computed-%s.csv" % (PATH, RING)
 #rdd1.write.format("csv").mode("overwrite").options(header="false").save(totalsize)
