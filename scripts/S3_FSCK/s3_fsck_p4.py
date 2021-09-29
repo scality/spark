@@ -70,7 +70,6 @@ def findsuccessor(key, node):
     node: node from a DaemonFactory().get_daemon("node") assignment
     ring: Name of the ring to perform lookup in.
     """
-    print "findsuccessor key: " + str(key)
     successor = node.findSuccessor(key)
     status = successor['status']
     if status:
@@ -123,7 +122,6 @@ def revlookupid(ringkey, nodelist, ring):
                         objectkey = ''.join(objectkeylist)
                         while objectkey.endswith('00'):
                             objectkey = objectkey[:-2].zfill(40)
-                        print "revlookupid returning objectkey: " + str(objectkey)
                     return (status, objectkey)
                 else:
                     status = "NOK: usermd is None"
@@ -139,8 +137,6 @@ def deletekey(row):
     key = row.ringkey
     url = ''
     status, objectkey = revlookupid(key, listm, RING)
-    print "deletekey revlookupid status: " + str(status)
-    print "deletekey revlookupud objectkey: " + str(objectkey)
     if status and re.search(r'.*20$', str(objectkey)):
         url = "%s/%s" % (SREBUILDD_URL, str(objectkey.zfill(40)))
         try:
