@@ -4,10 +4,8 @@ import shutil
 import requests
 import time
 requests.packages.urllib3.disable_warnings()
-#import s3fs
 
 from pyspark.sql import SparkSession, Row, SQLContext
-import pyspark.sql.functions as F
 from pyspark import SparkContext
 
 from scality.supervisor import Supervisor
@@ -29,7 +27,7 @@ else:
     ssl._create_default_https_context = _create_unverified_https_context
 
 
-config_path = "%s/%s" % ( sys.path[0], "config/config.yml")
+config_path = "%s/%s" % ( sys.path[0] ,"config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
@@ -50,6 +48,8 @@ ENDPOINT_URL = cfg["s3"]["endpoint"]
 RETENTION = cfg.get("retention", 604800)
 PATH = "%s/%s/listkeys.csv" % (CPATH, RING)
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
+
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, CPATH, RING)
 
 spark = SparkSession.builder.appName("Generate Listkeys ring:" + RING) \
      .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
@@ -79,11 +79,6 @@ def prepare_path():
 def listkeys(row, now):
     klist = []
     n = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(row.ip, row.adminport), chord_addr=row.ip, chord_port=row.chordport, dso=RING)
-    fname = "%s/node-%s-%s.csv" % (PATH, row.ip, row.chordport)
-    if PROTOCOL == 'file':
-        f = open(fname, "w+")
-    # elif PROTOCOL == 's3a':
-    #     f = s3.open(fname, "ab")
     params = { "mtime_min":"123456789", "mtime_max":now, "loadmetadata":"browse"}
     for k in n.listKeysIter(extra_params=params):
         if len(k.split(",")[0]) > 30 :
@@ -91,7 +86,7 @@ def listkeys(row, now):
             # data = [ k.rstrip().split(',')[i] for i in [0,1,2,3] ]
             # data = ",".join(data)
             # print >> f, data
-    # return [( row.ip, row.adminport, 'OK')]
+    print [( row.ip, row.adminport, 'OK')]
     return klist
 
 now = int(str(time.time()).split('.')[0]) - RETENTION
@@ -100,12 +95,8 @@ s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 df = spark.createDataFrame(listm)
 print df.show(36, False)
-# dfnew = df.repartition(36)
-dfnew = df.repartition(PARTITIONS)
+
+dfnew = df.repartition(36)
 dfklist = dfnew.rdd.map(lambda x:listkeys(x, now))
 dfklist = dfklist.flatMap(lambda x: x).toDF()
-dfklist.show(1000)
-
-dfklist = dfklist.repartition(PARTITIONS)
-fname2 = "%s://%s/%s/listkeys.csv" % (PROTOCOL, CPATH, RING)
-dfklist.write.format("csv").mode("overwrite").options(header="true").save(fname2)
+dfklist.write.format("csv").mode("overwrite").options(header="true").save(files)
