@@ -6,27 +6,26 @@
 Pull the docker spark-worker image on the servers you want to act as a spark node.
 
 ```
-#docker pull patrickdos/spark-worker
+[root@node01 ~]# docker pull patrickdos/spark-worker
 ```
 
 Pull the docker spark-master image on a server ( could be a spark node ).
 
 ```
-#docker pull patrickdos/spark-master
+[root@node01 ~]# docker pull patrickdos/spark-master
 ```
 
-
-i.e of worker starting script for 6 nodes:
-/ring/fs/spark/ should be a distributed file-system since the nodes should have access to the same DATA. ( could be a NFS or a SOFS connector ).
-/var/tmp should be a location with at least 10GB.
-For the moment you have to set the IPs manually.
-So you have to edit it and put the IPs accordingly.
-
+### Starting the spark cluster
 Warning:
-	If you choose SOFS, TACO is mandatory, otherwise, will fail when it will create the path to output the results.
+If you choose SOFS, TACO is mandatory, otherwise, will fail when it will create the path to output the results.
+
+#### Starting the first worker of a 6 node cluster:
 
 ```
-docker run -d --rm -it  --net=host --name spark-worker --hostname spark-worker  --add-host spark-master:178.33.63.238 --add-host spark-worker:178.33.63.238  --add-host node1:178.33.63.238 \
+docker run -d --rm -dit  --net=host --name spark-worker \
+           --hostname spark-worker  \
+           --add-host spark-master:178.33.63.238 \
+           --add-host spark-worker:178.33.63.238  \
            --add-host=node01:178.33.63.238  \
            --add-host=node02:178.33.63.219 \
            --add-host=node03:178.33.63.192 \
@@ -35,7 +34,29 @@ docker run -d --rm -it  --net=host --name spark-worker --hostname spark-worker  
            --add-host=node06:178.33.63.220 \
            -v /ring/fs/spark/:/fs/spark \
            -v /var/tmp:/tmp \
-spark-worker
+            patrickdos/spark-worker
+```
+
+* The -v volume mappings are only required if using SOFS to store output not S3. 
+  * /ring/fs/spark/ should be a distributed file-system since the nodes should have access to the same DATA. ( could be a NFS or a SOFS connector ).
+* /var/tmp should be a location with at least 10GB.
+* spark-worker should be the local IP of the node running the container.
+* The add-host command should use resolvable shortnames (names exist in /etc/hosts, dns A records, etc.)
+* For the moment you have to set the IPs manually.
+
+#### Starting the master of the 6 node cluster:
+
+```
+docker run --rm -dit --net=host --name spark-master \
+           --hostname spark-master \
+           --add-host spark-master:178.33.63.238 \
+           --add-host=node01:178.33.63.238  \
+           --add-host=node02:178.33.63.219 \
+           --add-host=node03:178.33.63.192 \
+           --add-host=node04:178.33.63.213 \
+           --add-host=node05:178.33.63.77 \
+           --add-host=node06:178.33.63.220 \
+           patrickdos/spark-master
 ```
 
 ## Configuration
@@ -48,17 +69,18 @@ master: "spark://178.33.63.238:7077"
 
 ## How to submit a job to the cluster
 
-As you'll notice the python virtualenv should not the needed to submit the jobs since all the magic will happen inside the docker.
+As you'll notice the python virtualenv should not the needed to submit the jobs since all the magic will happen inside the docker container.
 
 * Specify the script name using the -s argument.
-
 * Specify the RING nale using the -r argument. 
 
 ``` 
-#cd /root/spark/scripts/
-#python submit.py -s FSCK/check_volume.py -r META
+[root@node01 ~]# cd /root/spark/scripts/
+[root@node01 scripts]# python submit.py -s SOFS_FSCK/check_volume.py -r META
 ```
 
+:warning: **Submit the jobs exactly as shown above. Changes such as adding a ./ to submit.py (ie. python ./submit.py) or
+            variables in the script name (ie. S3_FSCK/s3_fsck_${step}.py) can cause loading errors!**
 
 # Single local spark Deployment
 
@@ -84,7 +106,7 @@ spark.memory.offHeap.size: "4g"
 
 * Disk capacity requirements
 90 bytes per key.
-
+* 
 eg:
 ```
 ring> supervisor dsoStorage IT
@@ -99,11 +121,11 @@ For **261622847** keys it takes:
 ```
 
 ```
-[root@node01 spark]# du  /fs/spark/listkeys-IT.csv/
+[root@node01 spark]# du /fs/spark/listkeys-IT.csv/
 22388738	/fs/spark/listkeys-IT.csv/
 ```
 ```
-[root@node01 spark]# du  /fs/spark/listkeys-IT.csv/ -sh
+[root@node01 spark]# du -sh /fs/spark/listkeys-IT.csv/ 
 22G	/fs/spark/listkeys-IT.csv/
 ```
 
@@ -113,9 +135,9 @@ For **261622847** keys it takes:
 
 
 ### Untar it into any directory
-```
-#cd /root 
-#tar xzf spark_env.tgz
+``` 
+[root@node01 tmp]# cd /root/
+[root@node01 ~]# tar xzf spark_env.tgz
 ```
 
 
@@ -132,46 +154,46 @@ For **261622847** keys it takes:
 ###  Untar the env
 
 ```
-#cd /root/
-#tar xvzf spark_env-centos-6.tgz
+[root@node01 tmp]# cd /root/
+[root@node01 ~]# tar xvzf spark_env-centos-6.tgz
 ```
 
 ### Untar the python2.7 libs
 
 ```
-#cd /
-#tar cvzf /root/python-2.7-centos6.tgz
+[root@node01 ~]# cd /
+[root@node01 /]# tar cvzf /root/python-2.7-centos6.tgz
 ```
 
 ### Create the following file
 
 ```
-# cat /etc/ld.so.conf.d/python27.conf
+[root@node01 ~]# cat /etc/ld.so.conf.d/python27.conf
 /usr/local/lib
 ```
 
 ### load the lib
 
 ```
-#ldconfig
+[root@node01 ~]# ldconfig
 ```
 
 ## Update Java to version 1.8
 
 ```
-#yum -y install java-1.8.0-openjdk
+[root@node01 ~]# yum -y install java-1.8.0-openjdk
 ```
 
 ## Enable the virt_env + Download the spark scripts 
 
 ### Active the virtual env
 ```
-#source spark_env/bin/activate 
+[root@node01 ~]# source spark_env/bin/activate 
 ```
 
 ### Clone the spark script repository
 ```
-#git clone http://bitbucket.org/scality/spark
+[root@node01 ~]# git clone http://bitbucket.org/scality/spark
 ```
 
 ### Or Download the latest tarball

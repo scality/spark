@@ -211,7 +211,7 @@ Start the new bizstorenode on all the nodes
 ### Figure out the volumes ID
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_volume.py META
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_volume.py META
 ```
 
 ```
@@ -434,7 +434,7 @@ ie.
 
 ### Filter the ARC keys for the listkeys 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p0.py DATA
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_files_p0.py DATA
 ```
 
 ### Move the result to a new dir so we keep the same path
@@ -446,20 +446,20 @@ mv /ring/fs/output/output-sparse-ARC-FILES-DATA.csv /ring/fs/output/output-spars
 ### Report the list of stripes for all the sparse files
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p1.py META
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_files_p1.py META
 ```
 
 
 ### Generate the dig of all stripes
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p2.py META
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_files_p2.py META
 ```
 
 ### Compare the dig to the listkeys to figure out if the files are in a good shape
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p3.py META
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_files_p3.py META
 ```
 
 ie.of outputs:
@@ -507,7 +507,7 @@ find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark/inodes-2.txt
 ```
 
 ```
-#/root/spark_env/bin/python /root/spark/scripts/FSCK/check_files_p4.py META
+#/root/spark_env/bin/python /root/spark/scripts/SOFS_FSCK/check_files_p4.py META
 ```
 
 i.e of ouputs:
