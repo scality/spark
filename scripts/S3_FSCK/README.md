@@ -25,7 +25,7 @@ arc_protection: 8+4
 
 #### When using file protocol
 ```
-#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 > $(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
+#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s <start_date> -e <end_date> http://127.0.0.1:9000 > $(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
 ```
 
 #### When using s3 protocol
@@ -36,7 +36,7 @@ setting the endpoint url to use.
 
 
 ```
-#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s http://127.0.0.1:9000 | aws s3 cp - s3://$(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
+#docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s <start_date> -e <end_date> http://127.0.0.1:9000 | aws s3 cp - s3://$(spar_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
 ```
 This method may error if the file being uploaded as a stream exceeds 5GB. This can be mitigated by using the 
 --expected-size flag so aws knows the expected size of the file and can calculate the correct size and qty of MPUs for 
