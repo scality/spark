@@ -56,7 +56,7 @@ dfCOSsingle = dfCOSsingle.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
 #list the ARC SYNC KEYS
-df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$") & df["_c3"].rlike("16")).select("_c1")
+df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$")
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
 dfARCSYNC = dfARCSYNC.groupBy("_c1").count().filter("count > 3")
