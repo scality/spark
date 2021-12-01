@@ -118,7 +118,11 @@ def sparse(f):
 
 
 def check_split(key):
-    url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+    try:
+        url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+    except AttributeError as e:
+        print(e)
+        return ("HTTP_NOK")
     r = requests.head(url)
     if r.status_code == 200:
         split = r.headers.get("X-Scal-Attr-Is-Split", False)
@@ -128,31 +132,39 @@ def check_split(key):
 
 def blob(row):
     key = row._c2
-    split = check_split(key)
-    if split:
-        try:
-            header = {}
-            header['x-scal-split-policy'] = "raw"
-            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
-            r = requests.get(url, headers=header, stream=True)
-            if r.status_code == 200:
-                chunks = ""
-                for chunk in r.iter_content(chunk_size=1024000000):
-                    if chunk:
-                        chunks = chunk+chunk
+    if key is None:
+        mybucket = row._c0
+        myobject = row._c1
+        if mybucket is not None and myobject is not None:
+            print("Key is None error: bucket: " + mybucket + " - object: " + myobject)
+        else:
+            print("Key is None error: bucket or object is also None")
+    else:
+        split = check_split(key)
+        if split:
+            try:
+                header = {}
+                header['x-scal-split-policy'] = "raw"
+                url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+                r = requests.get(url, headers=header, stream=True)
+                if r.status_code == 200:
+                    chunks = ""
+                    for chunk in r.iter_content(chunk_size=1024000000):
+                        if chunk:
+                            chunks = chunk+chunk
 
-                chunkshex = chunks.encode('hex')
-                rtlst = []
-                for k in list(set(sparse(chunkshex))):
-                    rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
-                return rtlst
-            else:
-                return [{"key":key, "subkey":"NOK", "digkey":"NOK"}]
+                    chunkshex = chunks.encode('hex')
+                    rtlst = []
+                    for k in list(set(sparse(chunkshex))):
+                        rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
+                    return rtlst
+                else:
+                    return [{"key":key, "subkey":"NOK", "digkey":"NOK"}]
 
-        except requests.exceptions.ConnectionError as e:
-            return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
-    elif split == False:
-        return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
+            except requests.exceptions.ConnectionError as e:
+                return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
+        elif split == False:
+            return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
 
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
