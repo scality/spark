@@ -55,7 +55,7 @@ dfCOSsingle = dfCOSsingle.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
-#list the ARC SYNC KEYS
+#list the ARC KEYS
 df_sync = df.filter(df["_c1"].rlike(r".*000000..51........$")).select("_c1")
 
 dfARCSYNC = df_sync.filter(df["_c1"].rlike(r".*70$"))
