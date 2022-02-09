@@ -23,7 +23,7 @@ It can be done in parallel of exporting the S3 keys from all the buckets (see ne
 
 ```
 # cd spark/scripts
-# python submit.my -s listkey.py -r DATA
+# python submit.py -s listkey.py -r DATA
 ```
 This method must complete with the empty object ``<RING_NAME>/listkeys.csv/__SUCCESS``. If it does not,
 switch to the second method.
@@ -92,7 +92,7 @@ aws s3api list-objects --bucket <BUCKET_NAME> --output json --query "[length(Con
 ### Translate the ARC S3 keys to RING keys
 
 ```
-# python submit.my -s S3_FSCK/s3_fsck_p0.py -r DATA
+# python submit.py -s S3_FSCK/s3_fsck_p0.py -r DATA
 ```
 
 #### Make sure a driver ARC is properly configured on the spark config points to it
@@ -107,7 +107,7 @@ send a ``HEAD`` request to their local srebuildd. Each spark worker scans 2,7M k
 and spark.executor.instances=6
 
 ```
-# python submit.my -s S3_FSCK/s3_fsck_p1.py -r DATA
+# python submit.py -s S3_FSCK/s3_fsck_p1.py -r DATA
 ```
 
 This step creates the ``<RING_NAME>/s3fsck/arc-keyss3objects-missing.csv/`` prefix.
@@ -115,7 +115,7 @@ This step creates the ``<RING_NAME>/s3fsck/arc-keyss3objects-missing.csv/`` pref
 ### Return all the RING keys that are not indexed by S3
 
 ```
-# python submit.my -s S3_FSCK/s3_fsck_p2.py -r DATA
+# python submit.py -s S3_FSCK/s3_fsck_p2.py -r DATA
 ```
 
 This step creates the ``<RING_NAME>/s3fsck/s3objects-missing.csv/`` prefix.
@@ -131,7 +131,7 @@ that are to be deleted.
 ### Remove all the RING keys that are not indexed by S3
 
 ```
-# python submit.my -s S3_FSCK/s3_fsck_p4.py -r DATA
+# python submit.py -s S3_FSCK/s3_fsck_p4.py -r DATA
 ```
 
 ## Output / Storage
