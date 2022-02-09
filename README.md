@@ -1,6 +1,8 @@
 
 # Clustering Deployment based on Docker
 
+The spark tool can be used to provide an application level orphan cleanups for the SOFS and S3 connectors. This is not for RING orphans. For more details on each of the SOFS or S3 connectors FSCK's open the associated `scripts/S3_FSCK` or `scripts/SOFS_FSCK` directory and reference the README.md within.
+
 ## Requirements
 
 Pull the docker spark-worker image on the servers you want to act as a spark node.
@@ -22,7 +24,7 @@ If you choose SOFS, TACO is mandatory, otherwise, will fail when it will create 
 #### Starting the first worker of a 6 node cluster:
 
 ```
-docker run -d --rm -dit  --net=host --name spark-worker \
+docker run --rm -dit  --net=host --name spark-worker \
            --hostname spark-worker  \
            --add-host spark-master:178.33.63.238 \
            --add-host spark-worker:178.33.63.238  \
@@ -193,7 +195,7 @@ For **261622847** keys it takes:
 
 ### Clone the spark script repository
 ```
-[root@node01 ~]# git clone http://bitbucket.org/scality/spark
+[root@node01 ~]# git clone git@github.com:scality/spark.git
 ```
 
 ### Or Download the latest tarball
