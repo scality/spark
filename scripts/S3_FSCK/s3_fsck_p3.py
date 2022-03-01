@@ -46,7 +46,7 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-arcindex = {"4+2": "102060", "8+4": "12040C", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 
 
