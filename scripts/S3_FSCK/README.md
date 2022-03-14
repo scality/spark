@@ -189,6 +189,11 @@ This method doesn't need the ``<RING_NAME>/listkeys.csv/__SUCCESS`` object.
 
 #### When using s3 protocol
 
+
+--> EDIT BEN MORGE : WE WILL USE THE S3UTILS verifyBucketSproxydKeys SCRIPT (MODIFICATIONS BROUGHT IN S3C-5544) TO LIST THE CONTENT OF THE BUCKETS --> OUTPUT INPROVED, DOC TO FOLLOW
+
+
+
 *Simplest way*: dump all S3 keys locally and upload them to the S3 bucket.
 
 ```
