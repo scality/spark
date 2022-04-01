@@ -158,7 +158,7 @@ def blob(row):
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
 
-df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ";").load(files)
+df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 df = df.repartition(PARTITIONS)
 rdd = df.rdd.map(lambda x : blob(x))
