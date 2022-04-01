@@ -142,6 +142,18 @@ https://bitbucket.org/scality/spark/downloads/
 arc_protection: 8+4
 ```
 
+### Primary method
+
+* Pull the s3utils:1.12.5 or newer container image.
+
+```
+# docker pull registry.scality.com/s3utils/s3utils:1.12.5
+```
+
+### Alternative method
+
+**DEPRECATED** - Use the Primary method as the s3utils container is updated to handle metadata from S3C 7.10 clusters.
+
 * Pull the report-sproxyd-keys docker container.
 
 ```
@@ -153,7 +165,7 @@ arc_protection: 8+4
 This step creates the ``<RING_NAME>/listkeys.csv/`` prefix, which contains the CSV files listing all RING keys.
 It can be done in parallel of exporting the S3 keys from all the buckets (see next section).
 
-#### First method: with spark
+#### Primary method: with spark
 
 ```
 # cd spark/scripts
@@ -162,7 +174,7 @@ It can be done in parallel of exporting the S3 keys from all the buckets (see ne
 This method must complete with the empty object ``<RING_NAME>/listkeys.csv/__SUCCESS``. If it does not,
 switch to the second method.
 
-#### Second method: with ringsh, awk and aws-cli
+#### Alternative method: with ringsh, awk and aws-cli
 
 For each node of the RING:
 
@@ -177,17 +189,48 @@ This method doesn't need the ``<RING_NAME>/listkeys.csv/__SUCCESS`` object.
 
 ### Run the image locally on a S3 connector or specify the bucketD url
 
-#### When using file protocol
+#### Current Method
+
+
+
+##### When using s3 protocol
+
+###### Current Method
+
+Load the following script onto multiple spark-workers. Using 8 workers allows you to dump in parallel per Raft Session ID, which drastically reduces the time to dump all bucketd metadata.
 
 ```
-# docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s <start_date> -e <end_date> http://127.0.0.1:9000 > $(spark_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
+#!/bin/bash
+
+RID=1 
+export WORKDIR=/var/tmp/bucketSproxydKeys
+
+if ! [ -d "${WORKDIR}" ]
+then  
+    mkdir -pv ${WORKDIR}
+fi    
+
+for bucket in $(curl --silent http://localhost:9000/_/raft_sessions/${RID}/bucket | jq -r '.[] | select (. | contains("mpuShadowBucket") | not) | select (. | contains("users..bucket") | not)')
+
+do    
+    echo "--- Starting on ${bucket} ---"
+    docker run \ 
+        --rm \
+        -it \ 
+        --net host \
+        --entrypoint /usr/local/bin/node \
+        -e 'BUCKETD_HOSTPORT=127.0.0.1:9000' \
+        -e "BUCKETS=${bucket}" \
+        -e 'NO_MISSING_KEY_CHECK=1' \
+        -e 'VERBOSE=1' \
+        scality/s3utils:1.12.5 \
+        verifyBucketSproxydKeys.js  \
+        | jq -r "[. | select(.message | contains(\"sproxyd key\"))  + {\"bucket\": .objectUrl  } | .bucket |= sub(\"s3://(?<bname>.*)/.*\"; \"\(.bname)\") | .objectUrl |= sub(\"s3://.*/(?<oname>.*)$\"; \"\(.oname)\") | .bucket, .objectUrl, .sproxydKey] | @csv" \
+        > ${WORKDIR}/${bucket}_keys.txt
+done  
 ```
 
-* Do not forget the ``--debug`` option. Otherwise it won't print anything.
-
-* ``<start_date>`` and ``end_date`` allow you to give the the oldest and most recent creation date of the S3 objects. Make sure to include all S3 objects available.
-
-#### When using s3 protocol
+After finished upload the content to the ``s3://{{PATH}}/{{RING}/s3-bucketd/`` path.
 
 
 --> EDIT BEN MORGE : WE WILL USE THE S3UTILS verifyBucketSproxydKeys SCRIPT (MODIFICATIONS BROUGHT IN S3C-5544) TO LIST THE CONTENT OF THE BUCKETS --> OUTPUT INPROVED, DOC TO FOLLOW
@@ -212,6 +255,18 @@ on the length of the nodes IP Address, bucket name and how long the object name 
 ```
 aws s3api list-objects --bucket <BUCKET_NAME> --output json --query "[length(Contents[])]"
 ```
+
+
+##### When using file protocol
+
+```
+# docker run --net=host patrickdos/report-sproxyd-keys:basic  --debug -s <start_date> -e <end_date> http://127.0.0.1:9000 > $(spark_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
+```
+
+* Do not forget the ``--debug`` option. Otherwise it won't print anything.
+
+* ``<start_date>`` and ``end_date`` allow you to give the the oldest and most recent creation date of the S3 objects. Make sure to include all S3 objects available.
+
 
 ### Translate the ARC S3 keys to RING keys
 
