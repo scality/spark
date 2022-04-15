@@ -1,0 +1,54 @@
+worker_processes auto;
+user root root;
+
+events {
+    multi_accept on;
+    use epoll;
+    worker_connections 2048;
+}
+
+http {
+
+    proxy_cache off;
+    tcp_nodelay on;
+    underscores_in_headers on;
+
+    upstream s3 {
+        keepalive 256;
+{% for h in groups['runners_s3'] %}
+        server {{ hostvars[h].ansible_host }}:8000;
+{% endfor %}
+    }
+
+    upstream srebuildd {
+        keepalive 256;
+{% for h in groups['runners_srebuildd'] %}
+        server {{ hostvars[h].ansible_host }}:81;
+{% endfor %}
+{% for h in groups['runners_storage'] %}
+        server {{ hostvars[h].ansible_host }}:81;
+{% endfor %}
+    }
+
+    server {
+        listen 0.0.0.0:18000;
+
+        access_log /logs/sparkworker-sidecar-s3-http.log combined;
+        error_log /logs/sparkworker-sidecar-s3-http.err.log warn;
+
+        location / {
+          proxy_pass http://s3;
+        }
+    }
+
+    server {
+        listen 0.0.0.0:10081;
+
+        access_log /logs/sparkworker-sidecar-srebuildd-http.log combined;
+        error_log /logs/sparkworker-sidecar-srebiuldd-http.err.log warn;
+
+        location / {
+          proxy_pass http://srebuildd;
+        }
+    }
+}

@@ -1,0 +1,8 @@
+---
+- hosts: sparkmaster:sparkworkers
+  tasks:
+    - name: Deploy the sidecar nginx.conf
+      template:
+        src: ./sidecar-nginx.conf.j2
+        dest: /etc/scality/spark/sidecar/nginx.conf
+        mode: 0640
