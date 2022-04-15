@@ -1,9 +1,8 @@
 ---
-￼- hosts: sparkmaster:sparkworkers
-￼  tasks:
-￼
-￼    - name: Deploy the spark_start.sh script
-￼      template:
-￼        src: ./start_spark.sh.j2
-￼        dest: /usr/local/bin/start_spark.sh
-￼        mode: 0700
+- hosts: sparkmaster:sparkworkers
+  tasks:
+    - name: Deploy the spark_start.sh script
+      template:
+        src: ./start_spark.sh.j2
+        dest: /usr/local/bin/start_spark.sh
+        mode: 0700
