@@ -23,9 +23,9 @@ PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
-SREBUILDD_IP  = cfg["srebuildd_ip"]
+SREBUILDD_URL  = cfg["srebuildd_url"]
 SREBUILDD_ARCDATA_PATH  = cfg["srebuildd_arcdata_path"]
-SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_ARCDATA_PATH)
+SREBUILDD_URL = "%s/%s" % (SREBUILDD_URL, SREBUILDD_ARCDATA_PATH)
 ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
 
