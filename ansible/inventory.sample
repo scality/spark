@@ -1,0 +1,66 @@
+# -------------------------------------------
+# This is the base inventory file
+# -------------------------------------------
+# HOW TO DEPLOY DECOUPLED MONOSITE
+# replace serverX.example.com by the 6 IPs
+# of your servers
+# You can add more clusters by adding groups
+# of 5 servers
+# -------------------------------------------
+
+# Here you can assign IP/hostname to the clusters members
+# They should start by md[1-5] or wsb[1-5] and be followed by -clusterX
+md1-cluster1 ansible_host=10.100.3.74 env_metadata_bucket_datapaths="['/scality/ssd1/s3']" env_host_data="/scality/ssd1/s3"
+md2-cluster1 ansible_host=10.100.2.103 env_metadata_bucket_datapaths="['/scality/ssd1/s3']" env_host_data="/scality/ssd1/s3"
+md3-cluster1 ansible_host=10.100.1.132 env_metadata_bucket_datapaths="['/scality/ssd1/s3']" env_host_data="/scality/ssd1/s3"
+md4-cluster1 ansible_host=10.100.2.21 env_metadata_bucket_datapaths="['/scality/ssd1/s3']" env_host_data="/scality/ssd1/s3"
+md5-cluster1 ansible_host=10.100.2.79 env_metadata_bucket_datapaths="['/scality/ssd1/s3']" env_host_data="/scality/ssd1/s3"
+
+# If you want to use existing inventory hosts you need to define them under the
+# hosts shortname (ie. `hostname -s`) and is resolvable via `/etc/hosts` or DNS
+stor-01 ansible_host=10.100.3.74
+stor-02 ansible_host=10.100.2.103
+stor-03 ansible_host=10.100.1.132
+stor-04 ansible_host=10.100.2.21
+stor-05 ansible_host=10.100.2.79
+
+
+# Place 1 docker host into sparkmaster group
+# To submit the listkey.py script requires scality python RPM/modules installed
+[sparkmaster]
+md1-cluster1
+
+# Place your workers into sparkworkers group
+# If you want to run workers on your master include it in the sparkworkers group
+[sparkworkers]
+md1-cluster1
+md2-cluster1
+md3-cluster1
+
+# If you will use a sidecar define the runners_srebuildd group
+# This group will be configured as the server pool behind the nginx sidecar LB
+[runners_srebuildd]
+md4-cluster1
+md5-cluster1
+
+# Here you specify which server will run a metadata cluster.
+[runners_metadata]
+md1-cluster1
+md2-cluster1
+md3-cluster1
+md4-cluster1
+md5-cluster1
+
+# Here you specify which server will run a S3 connector.
+[runners_s3]
+# Decoupled deployment
+# You can add as many servers as you need
+md1-cluster1
+md2-cluster1
+md3-cluster1
+md4-cluster1
+md5-cluster1
+
+# Here you specify which server will run the logger.
+[loggers:children]
+runners_s3
