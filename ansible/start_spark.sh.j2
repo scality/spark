@@ -22,6 +22,6 @@
 ￼{% for h in groups['sparkworkers'] %}
 ￼   --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
 ￼{% endfor %}
-￼   -v /var/tmp:/tmp
+￼   -v /var/tmp:/tmp \
 ￼   registry.scality.com/playground/tbenson/spark-worker:latest
 ￼{%- endif -%}
