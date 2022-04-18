@@ -13,12 +13,14 @@ http {
     tcp_nodelay on;
     underscores_in_headers on;
 
+{% if not inventory_hostname in groups['runners_s3'] %}
     upstream s3 {
         keepalive 256;
 {% for h in groups['runners_s3'] %}
         server {{ hostvars[h].ansible_host }}:8000;
 {% endfor %}
     }
+{% endif %}
 
     upstream srebuildd {
         keepalive 256;
@@ -30,8 +32,9 @@ http {
 {% endfor %}
     }
 
+{% if not inventory_hostname in groups['runners_s3'] %}
     server {
-        listen 0.0.0.0:18000;
+        listen 127.0.0.1:8000;
 
         access_log /logs/sparkworker-sidecar-s3-http.log combined;
         error_log /logs/sparkworker-sidecar-s3-http.err.log warn;
@@ -40,9 +43,10 @@ http {
           proxy_pass http://s3;
         }
     }
+{% endif %}
 
     server {
-        listen 0.0.0.0:10081;
+        listen 127.0.0.1:10081;
 
         access_log /logs/sparkworker-sidecar-srebuildd-http.log combined;
         error_log /logs/sparkworker-sidecar-srebiuldd-http.err.log warn;
