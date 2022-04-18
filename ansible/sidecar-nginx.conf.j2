@@ -43,6 +43,9 @@ http {
           proxy_pass http://s3;
         }
 
+        proxy_next_upstream error timeout invalid_header http_500;
+        proxy_next_upstream_tries 1;
+
         proxy_http_version 1.1;
         proxy_set_header Host $http_host;
         proxy_set_header Connection "";
