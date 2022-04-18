@@ -132,25 +132,17 @@ def revlookupid(ringkey, nodelist, ring):
         status = 'NOK: findsuccessor status False'
         return (status, None)
 
-
 def deletekey(row):
-    key = row.ringkey
-    url = ''
-    status, objectkey = revlookupid(key, listm, RING)
-    if status and re.search(r'.*20$', str(objectkey)):
-        url = "%s/%s" % (SREBUILDD_URL, str(objectkey.zfill(40)))
+        key = row.ringkey
         try:
-            r = requests.delete(url)
-            status_code = r.status_code
-            return ( key, status_code, url)
+                url = "%s/%s" % ( SREBUILDD_URL, str(key.zfill(40)) )
+                print(url)
+                r = requests.delete(url)
+                status_code = r.status_code
+                #status_code = "OK"
+                return ( key, status_code, url)
         except requests.exceptions.ConnectionError as e:
-            return ( key, "ERROR_HTTP", url)
-    else:
-        return ( key, "ERROR_LOOKUP", url)
-
-
-
-
+                return (key,"ERROR_HTTP", url)
 
 
 files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
