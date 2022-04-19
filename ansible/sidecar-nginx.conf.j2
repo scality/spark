@@ -57,8 +57,9 @@ http {
     }
 {% endif %}
 
+{% if not inventory_hostname in groups['runners_srebuildd'] %}
     server {
-        listen 127.0.0.1:10081;
+        listen 127.0.0.1:81;
 
         access_log /logs/sparkworker-sidecar-srebuildd-http.log combined;
         error_log /logs/sparkworker-sidecar-srebiuldd-http.err.log warn;
@@ -67,4 +68,5 @@ http {
           proxy_pass http://srebuildd;
         }
     }
+{% endif -%}
 }
