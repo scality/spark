@@ -1,7 +1,33 @@
 ---
-- hosts: sparkmaster:sparkworkers
+- hosts: sparkworkers
   tasks:
-    - name: Deploy the sidecar nginx.conf
+    - name: Ensure sidecar config and log directories exists on all workers
+      file:
+        state: directory
+        path: "{{ item }}"
+      with_items:
+        - /etc/scality/spark/sidecar
+        - /var/log/scality/spark/sidecar
+
+- hosts: sparkworkers:!runners_s3:!runners_srebuildd
+  tasks:
+    - name: Deploy sidecar nginx.conf to standalone Sparkworkers
+      template:
+        src: ./sidecar-nginx.conf.j2
+        dest: /etc/scality/spark/sidecar/nginx.conf
+        mode: 0640
+
+- hosts: sparkworkers:!runners_s3
+  tasks:
+    - name: Deploy sidecar nginx.conf to standalone storage nodes for S3C
+      template:
+        src: ./sidecar-nginx.conf.j2
+        dest: /etc/scality/spark/sidecar/nginx.conf
+        mode: 0640
+
+- hosts: sparkworkers:!runners_srebuildd
+  tasks:
+    - name: Deploy sidecar nginx.conf to standalone S3C for Srebuildd
       template:
         src: ./sidecar-nginx.conf.j2
         dest: /etc/scality/spark/sidecar/nginx.conf

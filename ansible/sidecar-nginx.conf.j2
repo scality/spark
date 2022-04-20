@@ -29,7 +29,7 @@ http {
 {% endfor %}
 {% for h in groups['runners_storage'] %}
         server {{ hostvars[h].ansible_host }}:81;
-{% endfor %}
+{%- endfor %}
     }
 
 {% if not inventory_hostname in groups['runners_s3'] %}
@@ -55,7 +55,7 @@ http {
 
         client_max_body_size 0;
     }
-{% endif %}
+{%- endif %}
 
 {% if not inventory_hostname in groups['runners_srebuildd'] %}
     server {
@@ -68,5 +68,5 @@ http {
           proxy_pass http://srebuildd;
         }
     }
-{% endif -%}
+{%- endif -%}
 }
