@@ -23,7 +23,11 @@ PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
-SREBUILDD_IP  = cfg["srebuildd_ip"]
+try:
+    SREBUILDD_URL  = cfg["srebuildd_url"]
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
 SREBUILDD_ARCDATA_PATH  = cfg["srebuildd_arcdata_path"]
 SREBUILDD_URL = "%s/%s" % (SREBUILDD_URL, SREBUILDD_ARCDATA_PATH)
 ARC = cfg["arc_protection"]

@@ -21,7 +21,11 @@ else:
 
 PATH = cfg["path"]
 
-SREBUILDD_IP = cfg["srebuildd_ip"]
+try:
+    SREBUILDD_URL  = cfg["srebuildd_url"]
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
 SREBUILDD_ARC_PATH = cfg["srebuildd_arc_path"]
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]

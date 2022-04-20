@@ -29,7 +29,11 @@ USER = cfg["sup"]["login"]
 PASSWORD = cfg["sup"]["password"]
 URL = cfg["sup"]["url"]
 PATH = cfg["path"]
-SREBUILDD_IP  = cfg["srebuildd_ip"]
+try:
+    SREBUILDD_URL  = cfg["srebuildd_url"]
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
 SREBUILDD_PATH  = cfg["srebuildd_chord_path"]
 SREBUILDD_URL = "%s/%s" % (SREBUILDD_URL, SREBUILDD_PATH)
 PROTOCOL = cfg["protocol"]
