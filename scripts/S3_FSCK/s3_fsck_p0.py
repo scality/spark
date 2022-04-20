@@ -118,7 +118,7 @@ def sparse(f):
 
 
 def check_split(key):
-    url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+    url = "%s/%s/%s" % (SREBUILDD_URL, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
         split = r.headers.get("X-Scal-Attr-Is-Split", False)
@@ -133,7 +133,7 @@ def blob(row):
         try:
             header = {}
             header['x-scal-split-policy'] = "raw"
-            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+            url = "%s/%s/%s" % (SREBUILDD_URL, SREBUILDD_ARC_PATH, str(key.zfill(40)))
             r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
                 chunks = ""
