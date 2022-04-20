@@ -233,30 +233,6 @@ done
 After finished upload the content to the ``s3://{{PATH}}/{{RING}/s3-bucketd/`` path.
 
 
---> EDIT BEN MORGE : WE WILL USE THE S3UTILS verifyBucketSproxydKeys SCRIPT (MODIFICATIONS BROUGHT IN S3C-5544) TO LIST THE CONTENT OF THE BUCKETS --> OUTPUT INPROVED, DOC TO FOLLOW
-
-
-
-*Simplest way*: dump all S3 keys locally and upload them to the S3 bucket.
-
-```
-# docker run --net=host patrickdos/report-sproxyd-keys:basic --debug -s <start_date> -e <end_date> http://127.0.0.1:9000 > /var/tmp/s3_keys.txt
-# aws s3 cp /var/tmp/s3_keys.txt s3://$(spark_dir_path)/<RING_NAME>/s3-bucketd/keys.txt
-```
-
-* Do not forget the ``--debug`` option. Otherwise it won't print anything.
-
-* ``<start_date>`` and ``end_date`` allow you to give the the oldest and most recent creation date of the S3 objects. Make sure to include all S3 objects available.
-
-With a bucket name of 10 characters or less every object will produce a line of output of around 100 bytes or so (depends
-on the length of the nodes IP Address, bucket name and how long the object name is). 
-
-
-```
-aws s3api list-objects --bucket <BUCKET_NAME> --output json --query "[length(Contents[])]"
-```
-
-
 ##### When using file protocol
 
 ```
