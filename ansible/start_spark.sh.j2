@@ -1,6 +1,6 @@
 #!/bin/bash
 
-{% if inventory_hostname in groups['sparkmaster'] %}
+{%- if inventory_hostname in groups['sparkmaster'] %}
 
 docker run --rm -dit --net=host --name spark-master \
    --hostname=spark-master \
@@ -11,7 +11,7 @@ docker run --rm -dit --net=host --name spark-master \
    --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
 {% endfor %}
    {{ sparkmaster_image }}
-{% endif %}
+{%- endif %}
 
 {% if inventory_hostname in groups['sparkworkers'] %}
 

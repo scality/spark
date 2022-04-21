@@ -1,8 +1,8 @@
 ---
 - hosts: sparkmaster:sparkworkers
   vars:
-    sparkmaster_image: registry.scality.com/playground/tbenson/spark-master:latest
-    sparkworker_image: registry.scality.com/playground/tbenson/spark-worker:latest
+    sparkmaster_image: registry.scality.com/scality/spark/spark-master:latest
+    sparkworker_image: registry.scality.com/scality/spark/spark-worker:latest
   tasks:
     - name: Deploy the spark_start.sh script
       template:
