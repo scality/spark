@@ -1,7 +1,12 @@
 
 # Clustering Deployment based on Docker
 
-The spark tool can be used to provide an application level orphan cleanups for the SOFS and S3 connectors. This is not for RING orphans. For more details on each of the SOFS or S3 connectors FSCK's open the associated `scripts/S3_FSCK` or `scripts/SOFS_FSCK` directory and reference the README.md within.
+The spark tool can be used to provide a distributed cleanup for application 
+level orphans (SOFS and S3 connectors) as well as find and remove ring orphans. 
+
+- For details on SOFS application orphan cleanup `scripts/SOFS_FSCK/README.md`
+- For details on S3 application orphan cleanup see `scripts/S3_FSCK/README.md`
+- For details on RING orphan cleanup see `scripts/orphan/README.md` 
 
 ## Requirements
 
