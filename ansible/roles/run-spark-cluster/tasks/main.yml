@@ -18,7 +18,7 @@
 
     - name: Login to the registry
       docker_login:
-        registry_url: "{{ master_container_image.split("/")[0] | lower }}"
+        registry_url: "{{ master_container_image.split('/')[0] | lower }}"
         username: "{{ registry_user }}"
         password: "{{ registry_password }}"
 
