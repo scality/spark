@@ -1,0 +1,4 @@
+---
+- hosts: sparkmaster:sparkworkers
+  roles:
+    - role: run-spark-cluster

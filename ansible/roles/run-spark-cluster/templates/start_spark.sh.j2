@@ -10,7 +10,7 @@ docker run --rm -dit --net=host --name spark-master \
 {% for h in groups['sparkworkers'] %}
    --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
 {% endfor %}
-   {{ sparkmaster_image }}
+   {{ master_container_image }}
 {%- endif %}
 
 {% if inventory_hostname in groups['sparkworkers'] %}
@@ -25,5 +25,5 @@ docker run --rm -dit --net=host --name spark-worker \
    --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
 {% endfor %}
    -v /var/tmp:/tmp \
-   {{ sparkworker_image }}
+   {{ worker_container_image }}
 {% endif %}
