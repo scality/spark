@@ -6,111 +6,111 @@
     mode: 0700
 
 - block:
-    - name: Obtain registry credentials
-      vars_prompt:
-        - name: registry_user
-          prompt: Enter the user name for the container registry
-          private: no
+  - name: Obtain registry credentials
+    vars_prompt:
+      - name: registry_user
+        prompt: Enter the user name for the container registry
+        private: no
 
-        - name: registry_password
-          prompt: Enter the password for the container registry
-          private: yes
+      - name: registry_password
+        prompt: Enter the password for the container registry
+        private: yes
 
-    - name: Login to the registry
-      docker_login:
-        registry_url: "{{ master_container_image.split('/')[0] | lower }}"
-        username: "{{ registry_user }}"
-        password: "{{ registry_password }}"
+  - name: Login to the registry
+    docker_login:
+      registry_url: "{{ master_container_image.split('/')[0] | lower }}"
+      username: "{{ registry_user }}"
+      password: "{{ registry_password }}"
 
     - block:
-        - name: Pull containers from registry
-          container_image:
-            name: "{{ item }}"
-            state: present
-          with_items:
-            - "{{ master_container_image }}"
-          when: inventory_hostname in groups['sparkmaster']
+      - name: Pull containers from registry
+        container_image:
+          name: "{{ item }}"
+          state: present
+        with_items:
+          - "{{ master_container_image }}"
+        when: inventory_hostname in groups['sparkmaster']
 
-        - name: Pull containers from registry
-          container_image:
-            name: "{{ item }}"
-            state: present
-          with_items:
-            - "{{ worker_container_image }}"
-            - "{{ s3utils_container_image }}"
-          when: inventory_hostname in groups['sparkworkers']
+      - name: Pull containers from registry
+        container_image:
+          name: "{{ item }}"
+          state: present
+        with_items:
+          - "{{ worker_container_image }}"
+          - "{{ s3utils_container_image }}"
+        when: inventory_hostname in groups['sparkworkers']
 
       when: not {{ offline_mode | bool }} and not {{ jump_host_staging | bool }}
 
     - block:
-        - name: Pull containers from registry
-          container_image:
-            name: "{{ item }}"
-            state: present
-          delegate_to: localhost
-          with_items:
-            - "{{ master_container_image }}"
-            - "{{ worker_container_image }}"
-            - "{{ s3utils_container_image }}"
+      - name: Pull containers from registry
+        container_image:
+          name: "{{ item }}"
+          state: present
+        delegate_to: localhost
+        with_items:
+          - "{{ master_container_image }}"
+          - "{{ worker_container_image }}"
+          - "{{ s3utils_container_image }}"
 
-        - name: Stage the images
-          container_image:
-            name: "{{ item }}"
-            archive_path: /var/tmp/{{ item }}.tar
-            state: present
-          delegate_to: localhost
-          with_items:
-            - "{{ master_container_image }}"
-            - "{{ worker_container_image }}"
-            - "{{ s3utils_container_image }}"
+      - name: Stage the images
+        container_image:
+          name: "{{ item }}"
+          archive_path: /var/tmp/{{ item }}.tar
+          state: present
+        delegate_to: localhost
+        with_items:
+          - "{{ master_container_image }}"
+          - "{{ worker_container_image }}"
+          - "{{ s3utils_container_image }}"
       when: "{{ jump_host_staging | bool }} and {{ offline_mode | bool }}"
   when: not {{ offline_mode | bool }} or {{ jump_host_staging | bool }}
 
 - block:
-    - name: Obtain the staged file paths
-      vars_prompt:
-        - name: worker_tarball
-          prompt: Enter the path to the staged spark worker container tarball
-          private: no
+  - name: Obtain the staged file paths
+    vars_prompt:
+      - name: worker_tarball
+        prompt: Enter the path to the staged spark worker container tarball
+        private: no
 
-        - name: master_tarball
-          prompt: Enter the path to the staged spark master container tarball
-          private: no
+      - name: master_tarball
+        prompt: Enter the path to the staged spark master container tarball
+        private: no
 
-        - name: repo_tarball
-          prompt: Enter the path to the staged spark repository tarball
-          private: no
+      - name: repo_tarball
+        prompt: Enter the path to the staged spark repository tarball
+        private: no
 
     - block:
-        - name: Synchronize the repository and master tarball
-          synchronize:
-            src: "{{ item }}"
-            dest: /var/tmp/
-          with_items:
-            - "{{ master_tarball }}"
-            - "{{ repo_tarball }}"
+      - name: Synchronize the repository and master tarball
+        synchronize:
+          src: "{{ item }}"
+          dest: /var/tmp/
+        with_items:
+          - "{{ master_tarball }}"
+          - "{{ repo_tarball }}"
 
-        - name: Load the container
-          container_image:
-            load_path: "{{ master_tarball }}"
-            name: "{{ master_container_image }}"
-            state: present
-            source: load
+      - name: Load the container
+        container_image:
+          load_path: "{{ master_tarball }}"
+          name: "{{ master_container_image }}"
+          state: present
+          source: load
       when: inventory_hostname in groups['sparkmaster']
 
     - block:
-        - name: Synchronize the worker tarball
-          synchronize:
-            src: "{{ item }}"
-            dest: /var/tmp/
-          with_items:
-            - "{{ worker_tarball }}"
+      - name: Synchronize the worker tarball
+        synchronize:
+          src: "{{ item }}"
+          dest: /var/tmp/
+        with_items:
+          - "{{ worker_tarball }}"
 
-        - name: Load the container
-          container_image:
-            load_path: "{{ worker_tarball }}"
-            name: "{{ worker_container_image }}"
-            state: present
-            source: load
+      - name: Load the container
+        container_image:
+          load_path: "{{ worker_tarball }}"
+          name: "{{ worker_container_image }}"
+          state: present
+          source: load
       when: inventory_hostname in groups['sparkworker']
   when: "{{ offline_mode | bool }}"
