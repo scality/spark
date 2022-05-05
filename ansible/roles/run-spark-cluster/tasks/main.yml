@@ -51,7 +51,7 @@
         dest: /root/spark
         repo: git@github.com:scality/spark.git
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
 
     - name: Create sample config.yml
       template:
@@ -61,10 +61,12 @@
       tags:
         - run::configs
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
 
     - name: Login to the registry {{ master_container_image.split('/')[0] | lower }}
-      community.general.docker_login:
+#      I had issues with docker_login, ansible on super has no community.general.docker_login
+#      community.general.docker_login:
+      docker_login:
         registry_url: "{{ master_container_image.split('/')[0] | lower }}"
         username: "{{ registry_user }}"
         password: "{{ registry_password }}"
@@ -78,7 +80,7 @@
       with_items:
         - "{{ master_container_image }}"
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
       tags:
         - run::images
 
@@ -90,7 +92,7 @@
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
       when:
-        - inventory_hostname in groups['sparkworkers']
+        - inventory_hostname in groups['sparkworkers']|default([])
       tags:
         - run::images
   when: not offline_mode | bool
@@ -103,24 +105,14 @@
       tags:
         - run::staging
 
-    - name: Extract the {{ staging_archive }} to {{ staging_path }}
-      unarchive:
-        remote_src: no
-        src: "{{ staging_path }}{{ staging_archive }}"
-        dest: "{{ staging_path }}"
-        exclude: spark-repo.tar
-      tags:
-        - run::staging
-
     - name: Synchronize the repository and master tarball
       synchronize:
-        src: "{{ staging_path }}{{ item }}.tar"
+        src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
         dest: "{{ staging_path }}"
-        state: present
       with_items:
         - "{{ master_container_image }}"
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
       tags:
         - run::staging
 
@@ -141,45 +133,48 @@
       tags:
         - run::configs
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
 
     - name: Load the master container
-      docker_image:
-        load_path: "{{ staging_path }}{{ item }}.tar"
-        name: "{{ item }}"
-        state: present
-        source: load
+#      docker_image:
+#        load_path: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
+#        name: "{{ item }}"
+#        state: present
+#        source: load
+      shell:
+        cmd: docker load < {{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar
       with_items:
         - "{{ master_container_image }}"
       when:
-        - inventory_hostname in groups['sparkmaster']
+        - inventory_hostname in groups['sparkmaster']|default([])
       tags:
         - run::staging
 
     - name: Synchronize the worker and s3utils tarball
       synchronize:
-        src: "{{ staging_path }}{{ item }}.tar"
+        src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
         dest: "{{ staging_path }}"
-        state: present
       with_items:
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
       when:
-        - inventory_hostname in groups['sparkworker']
+        - inventory_hostname in groups['sparkworkers']|default([])
       tags:
         - run::staging
 
     - name: Load the worker and s3utils containers
-      docker_image:
-        load_path: "{{ staging_path }}{{ item }}.tar"
-        name: "{{ item }}"
-        state: present
-        source: load
+#      docker_image:
+#        load_path: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
+#        name: "{{ item }}"
+#        state: present
+#        source: load
+      shell:
+        cmd: docker load < {{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar
       with_items:
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
       when:
-        - inventory_hostname in groups['sparkworker']
+        - inventory_hostname in groups['sparkworkers']|default([])
       tags:
         - run::staging
   when: offline_mode | bool
