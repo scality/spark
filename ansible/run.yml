@@ -1,4 +1,16 @@
 ---
+- hosts: staging
+  roles:
+    - role: stage-spark-cluster
+      vars:
+        stage: True
+      tags:
+        - never
+        - stage
+
 - hosts: sparkmaster:sparkworkers
   roles:
     - role: run-spark-cluster
+      tags:
+        - run
+      when: not stage | bool

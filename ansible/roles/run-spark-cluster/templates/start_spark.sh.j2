@@ -8,7 +8,7 @@ docker run --rm -dit --net=host --name spark-master \
    --add-host=spark-master:{{ hostvars[h].ansible_host }} \
 {% endfor %}
 {% for h in groups['sparkworkers'] %}
-   --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
+   --add-host={{ hostvars[h].ansible_fqdn.split('.')[0] }}:{{ hostvars[h].ansible_host }} \
 {% endfor %}
    {{ master_container_image }}
 {%- endif %}
@@ -22,7 +22,7 @@ docker run --rm -dit --net=host --name spark-worker \
 {% endfor %}
    --add-host=spark-worker:{{ ansible_ssh_host }} \
 {% for h in groups['sparkworkers'] %}
-   --add-host={{ hostvars[h].inventory_hostname }}:{{ hostvars[h].ansible_host }} \
+   --add-host={{ hostvars[h].ansible_fqdn.split('.')[0] }}:{{ hostvars[h].ansible_host }} \
 {% endfor %}
    -v /var/tmp:/tmp \
    {{ worker_container_image }}

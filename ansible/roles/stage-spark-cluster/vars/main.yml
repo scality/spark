@@ -4,6 +4,7 @@
 #offline_mode: True
 #jump_host_staging: False
 
+docker: docker
 
 container_name: 'scality-spark-worker'
 

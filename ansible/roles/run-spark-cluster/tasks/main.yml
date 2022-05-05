@@ -1,116 +1,192 @@
 ---
+
+- name: Ensure facts directory exists
+  file:
+    state: directory
+    path: /etc/ansible/facts.d
+  delegate_to: "{{ groups['supervisor'][0] }}"
+  run_once: true
+  tags:
+    - run::configs
+
+- name: Add salt pillar to facts temporarily
+  copy:
+    src: /srv/scality/pillar/scality-common.sls
+    dest: /etc/ansible/facts.d/scality-salt-pillar.yml
+    remote_src: true
+  delegate_to: "{{ groups['supervisor'][0] }}"
+  run_once: true
+  tags:
+    - run::configs
+
+- name: Gather facts from supervisor for sample config generation
+  setup:
+    fact_path: /etc/ansible/facts.d/
+  delegate_to: "{{ groups['supervisor'][0] }}"
+  run_once: true
+  tags:
+    - run::configs
+
+- name: Remove pillar from facts
+  file:
+    state: absent
+    path: /etc/ansible/facts.d/scality-salt-pillar.yml
+  delegate_to: "{{ groups['supervisor'][0] }}"
+  run_once: true
+  tags:
+    - run::configs
+
 - name: Copy spark_start.sh
   template:
     src: start_spark.sh.j2
     dest: /usr/local/bin/start_spark.sh
-    mode: 0700
+    mode: 0744
+  tags:
+    - run::configs
 
 - block:
-  - name: Obtain registry credentials
-    vars_prompt:
-      - name: registry_user
-        prompt: Enter the user name for the container registry
-        private: no
+    - name: Clone the spark repository into /root/spark on the spark master
+      git:
+        accept_hostkey: true
+        dest: /root/spark
+        repo: git@github.com:scality/spark.git
+      when:
+        - inventory_hostname in groups['sparkmaster']
 
-      - name: registry_password
-        prompt: Enter the password for the container registry
-        private: yes
+    - name: Create sample config.yml
+      template:
+        src: config-template.yml.j2
+        dest: /root/spark/scripts/config/config-SAMPLE.yml
+        mode: 0644
+      tags:
+        - run::configs
+      when:
+        - inventory_hostname in groups['sparkmaster']
 
-  - name: Login to the registry
-    docker_login:
-      registry_url: "{{ master_container_image.split('/')[0] | lower }}"
-      username: "{{ registry_user }}"
-      password: "{{ registry_password }}"
+    - name: Login to the registry {{ master_container_image.split('/')[0] | lower }}
+      community.general.docker_login:
+        registry_url: "{{ master_container_image.split('/')[0] | lower }}"
+        username: "{{ registry_user }}"
+        password: "{{ registry_password }}"
+      tags:
+        - run::images
 
-    - block:
-      - name: Pull containers from registry
-        container_image:
-          name: "{{ item }}"
-          state: present
-        with_items:
-          - "{{ master_container_image }}"
-        when: inventory_hostname in groups['sparkmaster']
+    - name: Pull {{ master_container_image }} image from registry
+      container_image:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - "{{ master_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkmaster']
+      tags:
+        - run::images
 
-      - name: Pull containers from registry
-        container_image:
-          name: "{{ item }}"
-          state: present
-        with_items:
-          - "{{ worker_container_image }}"
-          - "{{ s3utils_container_image }}"
-        when: inventory_hostname in groups['sparkworkers']
-
-      when: not {{ offline_mode | bool }} and not {{ jump_host_staging | bool }}
-
-    - block:
-      - name: Pull containers from registry
-        container_image:
-          name: "{{ item }}"
-          state: present
-        delegate_to: localhost
-        with_items:
-          - "{{ master_container_image }}"
-          - "{{ worker_container_image }}"
-          - "{{ s3utils_container_image }}"
-
-      - name: Stage the images
-        container_image:
-          name: "{{ item }}"
-          archive_path: /var/tmp/{{ item }}.tar
-          state: present
-        delegate_to: localhost
-        with_items:
-          - "{{ master_container_image }}"
-          - "{{ worker_container_image }}"
-          - "{{ s3utils_container_image }}"
-      when: "{{ jump_host_staging | bool }} and {{ offline_mode | bool }}"
-  when: not {{ offline_mode | bool }} or {{ jump_host_staging | bool }}
+    - name: Pull {{ worker_container_image }} and {{ s3utils_container_image }} from registry
+      container_image:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - "{{ worker_container_image }}"
+        - "{{ s3utils_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkworkers']
+      tags:
+        - run::images
+  when: not offline_mode | bool
 
 - block:
-  - name: Obtain the staged file paths
-    vars_prompt:
-      - name: worker_tarball
-        prompt: Enter the path to the staged spark worker container tarball
-        private: no
+    - name: Ensure staging directory exists
+      file:
+        state: directory
+        path: "{{ staging_path }}"
+      tags:
+        - run::staging
 
-      - name: master_tarball
-        prompt: Enter the path to the staged spark master container tarball
-        private: no
+    - name: Extract the {{ staging_archive }} to {{ staging_path }}
+      unarchive:
+        remote_src: no
+        src: "{{ staging_path }}{{ staging_archive }}"
+        dest: "{{ staging_path }}"
+        exclude: spark-repo.tar
+      tags:
+        - run::staging
 
-      - name: repo_tarball
-        prompt: Enter the path to the staged spark repository tarball
-        private: no
+    - name: Synchronize the repository and master tarball
+      synchronize:
+        src: "{{ staging_path }}{{ item }}.tar"
+        dest: "{{ staging_path }}"
+        state: present
+      with_items:
+        - "{{ master_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkmaster']
+      tags:
+        - run::staging
 
-    - block:
-      - name: Synchronize the repository and master tarball
-        synchronize:
-          src: "{{ item }}"
-          dest: /var/tmp/
-        with_items:
-          - "{{ master_tarball }}"
-          - "{{ repo_tarball }}"
+    - name: Ensure spark config directory exists
+      file:
+        state: directory
+        path: /root/spark/scripts/config
+      tags:
+        - run::configs
+      when:
+        - inventory_hostname in groups['sparkmaster']
 
-      - name: Load the container
-        container_image:
-          load_path: "{{ master_tarball }}"
-          name: "{{ master_container_image }}"
-          state: present
-          source: load
-      when: inventory_hostname in groups['sparkmaster']
+    - name: Create sample config.yml
+      template:
+        src: config-template.yml.j2
+        dest: /root/spark/scripts/config/config-SAMPLE.yml
+        mode: 0644
+      tags:
+        - run::configs
+      when:
+        - inventory_hostname in groups['sparkmaster']
 
-    - block:
-      - name: Synchronize the worker tarball
-        synchronize:
-          src: "{{ item }}"
-          dest: /var/tmp/
-        with_items:
-          - "{{ worker_tarball }}"
+    - name: Load the master container
+      docker_image:
+        load_path: "{{ staging_path }}{{ item }}.tar"
+        name: "{{ item }}"
+        state: present
+        source: load
+      with_items:
+        - "{{ master_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkmaster']
+      tags:
+        - run::staging
 
-      - name: Load the container
-        container_image:
-          load_path: "{{ worker_tarball }}"
-          name: "{{ worker_container_image }}"
-          state: present
-          source: load
-      when: inventory_hostname in groups['sparkworker']
-  when: "{{ offline_mode | bool }}"
+    - name: Synchronize the worker and s3utils tarball
+      synchronize:
+        src: "{{ staging_path }}{{ item }}.tar"
+        dest: "{{ staging_path }}"
+        state: present
+      with_items:
+        - "{{ worker_container_image }}"
+        - "{{ s3utils_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkworker']
+      tags:
+        - run::staging
+
+    - name: Load the worker and s3utils containers
+      docker_image:
+        load_path: "{{ staging_path }}{{ item }}.tar"
+        name: "{{ item }}"
+        state: present
+        source: load
+      with_items:
+        - "{{ worker_container_image }}"
+        - "{{ s3utils_container_image }}"
+      when:
+        - inventory_hostname in groups['sparkworker']
+      tags:
+        - run::staging
+  when: offline_mode | bool
+
+- name: Start the spark cluster
+  shell: |
+    /usr/local/bin/start_spark.sh
+  tags:
+    - run::cluster
+

@@ -1,0 +1,27 @@
+master: "spark://{{ hostvars[groups['sparkmaster'][0]]['ansible_host'] }}:7077"
+ring: "DATA"
+path: "{{ bucket_name }}"
+protocol: s3a      # Protocol can be either file or s3a.
+# Protocol file requires SOFS+DLM & path is the folder to write to within the SOFS volume.
+# Protocol s3a requires access/secret keys & endpoint URL & path is the bucket name within s3 to use.
+srebuildd_ip: "127.0.0.1"
+srebuildd_chord_path: "rebuild/chord-data"
+srebuildd_arc_path: "rebuild/arc-DATA"
+srebuildd_arcdata_path: "rebuild/arcdata-DATA"
+retention: 604800
+arc_protection: 8+4
+cos_protection: 3
+s3:
+  access_key: ""
+  secret_key: ""
+  endpoint: "http://127.0.0.1:8000"
+sup:
+  url: "https://{{ hostvars[groups['supervisor'][0]]['ansible_host'] }}:2443"
+  login: "root"
+  password: ""
+spark.executor.cores: {{ executor_cores }}
+spark.executor.instances: {{ executor_instances }}
+spark.executor.memory: "{{ executor_memory }}g"
+spark.driver.memory: "8g"
+spark.memory.offHeap.enabled: True
+spark.memory.offHeap.size: "6g"

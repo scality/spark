@@ -1,0 +1,91 @@
+---
+
+- block:
+    - name: Remove staging directory and old content
+      file:
+        state: absent
+        path: "{{ item }}"
+      with_items:
+        - "{{ staging_path }}"
+        - /tmp/spark
+
+    - name: Create empty staging directory
+      file:
+        state: directory
+        path: "{{ staging_path }}"
+
+- name: Ensure makeself is installed
+  package:
+    state: latest
+    name: makeself
+    enablerepo: epel
+
+
+- name: Archive the spark repository into the staging directory
+  git:
+    archive_prefix: spark/
+    accept_hostkey: true
+    archive: "{{ staging_path }}/spark-repo.tar"
+    single_branch: yes
+    version: improvement/RING-38909-ansible-playbook-to-deployment-start_spark.sh
+    dest: /tmp/spark
+
+    repo: git@github.com:scality/spark.git
+
+- name: Login to the registry {{ master_container_image.split('/')[0] | lower }}
+  vars:
+    registry: "{{ master_container_image.split('/')[0] | lower }}"
+  shell: |
+    {{ docker }} login --username {{ registry_user }} --password {{ registry_password }}  {{ registry }} 
+
+- name: Pull containers from registry {{ master_container_image.split('/')[0] | lower }}
+  shell: |
+    {{ docker }} pull {{ item }}
+  with_items:
+    - "{{ master_container_image }}"
+    - "{{ worker_container_image }}"
+    - "{{ s3utils_container_image }}"
+
+- name: Save the images into the staging directory
+  shell: |
+    {{ docker }} save -o {{ staging_path }}/{{ item.split(':')[0].split('/')[-1] }}.tar {{ item }}
+  with_items:
+    - "{{ master_container_image }}"
+    - "{{ worker_container_image }}"
+    - "{{ s3utils_container_image }}"
+
+- name: Generate setup.sh for makeself
+  template:
+    src: setup.sh.j2
+    dest: "{{ staging_path }}/setup.sh"
+    mode: 0700
+
+- name: Create SFX
+  shell: |
+    cd {{ staging_path }}
+    makeself --nocomp --notemp {{ staging_path }} /var/tmp/{{ staging_archive }} "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" ./setup.sh   
+
+#- name: Create the staging archive
+#  archive:
+#    path: "{{ staging_path }}/source/"
+#    dest: "{{ staging_path }}{{ staging_archive }}"
+#    format: "{{ staging_archive.split('.')[-1] }}"
+#    remove: true
+
+- debug:
+    msg:
+      - "The staging archive is built and available on the staging host,
+      {{ groups['staging'][0] }}:/var/tmp/{{ staging_archive }}. Place 
+      this file on the customer supervisor. It is self extracting and will 
+      generate a path you put inside staging_path, currently {{ staging_path }}.
+      The spark repository will be extracted to /root/spark. The  spark ansible 
+      playbooks can then be used to configure and deploy the spark master, spark
+      workers, and an nginx sidecar if your architecture requires it."
+
+      - "Don't forget to configure your inventory to match the customer
+      environment, then run:"
+
+      - "# ACTIVATE A VENV CONTAINING ANSIBLE #"
+      - "source /srv/scality/s3/s3-offline/venv/bin/activate"
+      - "cd /root/spark/ansible"
+      - "ansible-playbook -i inventory run.yml"
