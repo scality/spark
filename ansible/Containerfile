@@ -1,0 +1,12 @@
+FROM alpine:latest
+
+RUN apk --no-cache add ansible openssh-client
+RUN mkdir /ansible/
+COPY roles /ansible/roles
+COPY collections /ansible/collections
+COPY action_plugins /ansible/action_plugins
+COPY ansible.cfg /ansible/
+COPY inventory.sample /ansible/
+COPY run.yml /ansible/
+RUN chmod -R g+rw,o+rw /ansible/
+WORKDIR /ansible/

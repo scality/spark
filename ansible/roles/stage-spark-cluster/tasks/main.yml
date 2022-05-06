@@ -7,7 +7,7 @@
         path: "{{ item }}"
       with_items:
         - "{{ staging_path }}"
-        - /tmp/spark
+        - "{{ staging_path }}../spark"
 
     - name: Create empty staging directory
       file:
@@ -18,17 +18,22 @@
   package:
     state: latest
     name: makeself
-    enablerepo: epel
+  remote_user: root
+  when: ansible_os_family != 'Debian'
 
+- name: Ensure makeself is installed for debian
+  shell: |
+    apt install makeself
+  remote_user: root
+  when: ansible_os_family == 'Debian'
 
 - name: Archive the spark repository into the staging directory
   git:
     archive_prefix: spark/
     accept_hostkey: true
     archive: "{{ staging_path }}/spark-repo.tar"
-    single_branch: yes
     version: improvement/RING-38909-ansible-playbook-to-deployment-start_spark.sh
-    dest: /tmp/spark
+    dest: "{{ staging_path }}../spark"
 
     repo: git@github.com:scality/spark.git
 
@@ -36,7 +41,8 @@
   vars:
     registry: "{{ master_container_image.split('/')[0] | lower }}"
   shell: |
-    {{ docker }} login --username {{ registry_user }} --password {{ registry_password }}  {{ registry }} 
+    {{ docker }} login --username {{ registry_user }} --password {{ registry_password }}  {{ registry }}
+  when: registry == 'registry.scality.com'
 
 - name: Pull containers from registry {{ master_container_image.split('/')[0] | lower }}
   shell: |
@@ -65,12 +71,13 @@
     cd {{ staging_path }}
     makeself --nocomp --notemp {{ staging_path }} /var/tmp/{{ staging_archive }} "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" ./setup.sh   
 
-#- name: Create the staging archive
-#  archive:
-#    path: "{{ staging_path }}/source/"
-#    dest: "{{ staging_path }}{{ staging_archive }}"
-#    format: "{{ staging_archive.split('.')[-1] }}"
-#    remove: true
+- name: Cleanup staging temp files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ staging_path }}"
+    - "{{ staging_path }}../spark"
 
 - debug:
     msg:
