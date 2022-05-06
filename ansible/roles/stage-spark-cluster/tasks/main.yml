@@ -79,20 +79,22 @@
     - "{{ staging_path }}"
     - "{{ staging_path }}../spark"
 
-- debug:
-    msg:
-      - "The staging archive is built and available on the staging host,
-      {{ groups['staging'][0] }}:/var/tmp/{{ staging_archive }}. Place 
-      this file on the customer supervisor. It is self extracting and will 
-      generate a path you put inside staging_path, currently {{ staging_path }}.
-      The spark repository will be extracted to /root/spark. The  spark ansible 
-      playbooks can then be used to configure and deploy the spark master, spark
-      workers, and an nginx sidecar if your architecture requires it."
+- name: Stage the archive into the environment and deploy
+  vars:
+    message: |-
+      The staging archive is built and available on the staging host,
+      {{groups['staging'][0]}}:/var/tmp/{{staging_archive}}. Place this file on 
+      the customer supervisor. It is self extracting and will generate an 
+      archive inside {{staging_path}}. The spark repository will be extracted to 
+      /root/spark. The spark ansible playbooks can then be used to configure and 
+      deploy the spark master, spark workers, s3utils and an nginx sidecar if 
+      your architecture requires it.
+      
+      Configure your inventory to match the customer environment, then run:
 
-      - "Don't forget to configure your inventory to match the customer
-      environment, then run:"
-
-      - "# ACTIVATE A VENV CONTAINING ANSIBLE #"
-      - "source /srv/scality/s3/s3-offline/venv/bin/activate"
-      - "cd /root/spark/ansible"
-      - "ansible-playbook -i inventory run.yml"
+      # ACTIVATE A VENV CONTAINING ANSIBLE #
+      source /srv/scality/s3/s3-offline/venv/bin/activate
+      cd /root/spark/ansible
+      ansible-playbook -i inventory run.yml --tag deploy
+  debug:
+    msg: "{{ mymessage.split('\n') }}"

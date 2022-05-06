@@ -47,30 +47,19 @@ super      ansible_host=10.100.7.27
 #worker-02  ansible_host=10.100.4.93
 #worker-03  ansible_host=10.100.4.39
 rhel9-jump ansible_host=192.168.122.179
-
+#staging_host ansible_host={{IP_ADDRESS}}
 
 
 [all:vars]
-# {{ stage }} default value is False. When True the local system will build a
-# staging tarball for completely offline customer environments. ``--tag stage``
-#  sets this True and builds the {{ staging_archive }}.
-stage=False
 staging_path=/var/tmp/staging/
 staging_archive=spark-offline-archive.run
-
-# If {{ offline_mode }} True then the {{ staging_archive }} must contain the
-# tarball for deployment.
-# If {{ offline_mode }} False then the registry_user and registry_password must
-# be defined so all containers can be pulled from the registry directly.
 offline_mode=True
 registry_user="Trevor_Benson"
-registry_password="dqc0sto1fpe3axrbg1dk4u6wu1icohfv"
-
-# To submit the listkey.py script requires scality python RPM/modules installed
+registry_password=""
 
 [staging]
 # Using localhost requires ssh is enabled, and docker or podman is installed.
-# Set the {{ docker }} variable to the installed container management
+# Set the {{ docker }} variable to the installed container runtime engine
 localhost docker=podman
 
 [sparkcluster:children]
@@ -79,16 +68,15 @@ sparkworkers
 
 # Place 1  into sparkmaster group
 [sparkmaster]
-stor-06
+#stor-06
 
 # Place all workers into sparkworkers. Add your master to run a worker on it.
 [sparkworkers]
-stor-01
-stor-02
-stor-03
-stor-04
-stor-05
-stor-06
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
 #stor-06
 #conn-01
 #conn-02
@@ -100,7 +88,7 @@ stor-06
 # To automatically fill out the config.yml define a supervisor group
 # and include an ansible host in the group for the supervisor
 [supervisor]
-super
+#super
 
 # When running decoupled (standalone) S3C connectors as spark workers define the
 # runners_srebuildd group and put all storage nodes with the srebuildd connector
@@ -109,12 +97,12 @@ super
 # can be defined in ``config.yml``. The sidecar will round robin over all
 # members of the runners_srebuildd group.
 [runners_srebuildd]
-stor-01
-stor-02
-stor-03
-stor-04
-stor-05
-stor-06
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
+#stor-06
 
 # When running decoupled (standalone) storage nodes as spark workers define the
 # runners_s3 group and put all stateless S3C with the scality-s3 container
@@ -123,12 +111,12 @@ stor-06
 # can be defined in ``config.yml``. The sidecar will round robin over all
 # members of the runners_s3 group.
 [runners_s3]
-stor-01
-stor-02
-stor-03
-stor-04
-stor-05
-stor-06
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
+#stor-06
 #conn-01
 #conn-02
 #conn-03

@@ -12,5 +12,5 @@
   roles:
     - role: run-spark-cluster
       tags:
-        - run
+        - deploy
       when: not stage | bool
