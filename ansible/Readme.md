@@ -157,7 +157,7 @@ written to ``/var/tmp/spark-offline-archive.run``. Get it staged onto the
 supervisor and execute it. It will provide all the components to continue with
 a fully offline deployment of the spark tools.
 
-#### Using the Spark Ansible run.yml playbook requirements
+#### The Spark Ansible run.yml playbook requirements
 The run.yml playbook uses Ansible, the community.general Ansible modules and/or
 the local Container Runtime Engine (docker or podman) on the staging host.
 
@@ -172,4 +172,17 @@ password for the user instead, or set in persistently in `ansible.cfg`.
   * Inside `inventory` it will be `registry_password`
   * As a command line variable it will be `REGISTRY_PASSWORD`
 
-#### Using the spark-deployment container steps
+#### Using the Spark Ansible run.yml playbook
+
+If you define the registry user and password in the inventory, then run:
+
+```commandline
+ansible-playbook -i inventory --tags stage run.yml 
+```
+
+Otherwise define them on the CLI
+
+```commandline
+ansible-playbook -i inventory --tags stage -e "REGISTRY_USER=User_Name" -e "REGISTRY_PASSWORD=asjdfaklsjflkajshdf" run.yml 
+```
+
