@@ -30,19 +30,27 @@ the container host.
 in the `[staging]` group
 * Set the REGISTRY_USER variable to match a registry.scality.com API user 
 * Set the REGISTRY_PASSWORD variable to matching API password
+
+When using docker set environment variables in all upper case. Inside the 
+inventory file you will see the same variables in all lower case.
  
-#### Using the spark-deployment container
+#### The spark-deployment container
+
+##### Pulling the spark-deployment image from registry
 ```commandline
 [docker|podman] pull registry.scality.com/spark/spark-deployment:latest
 ```
 
-Building the spark-deployment image locally 
+##### Building the spark-deployment image locally
+
+If you do not have access to registry.scality.com you an build the image.
+
 ```commandline
 cd spark/ansible
 docker build . -f Containerfile -t registry.scality.com/spark/spark-deployment:latest
 ```
 
-Generating the spark offline archive with the spark-deployment container 
+##### Generating the spark offline archive with the spark-deployment container 
 ```commandline
 [docker|podman] run --privileged \
   --rm \
