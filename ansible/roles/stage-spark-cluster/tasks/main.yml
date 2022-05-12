@@ -81,7 +81,7 @@
 
 - name: Stage the archive into the environment and deploy
   vars:
-    message: |-
+    mymessage: |-
       The staging archive is built and available on the staging host,
       {{groups['staging'][0]}}:/var/tmp/{{staging_archive}}. Place this file on 
       the customer supervisor. It is self extracting and will generate an 
@@ -97,4 +97,4 @@
       cd /root/spark/ansible
       ansible-playbook -i inventory run.yml --tag deploy
   debug:
-    msg: "{{ mymessage.split('\n') }}"
+    var: mymessage
