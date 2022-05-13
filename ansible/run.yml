@@ -2,8 +2,6 @@
 - hosts: staging
   roles:
     - role: stage-spark-cluster
-      vars:
-        stage: True
       tags:
         - never
         - stage
@@ -12,5 +10,5 @@
   roles:
     - role: run-spark-cluster
       tags:
+        - never
         - deploy
-      when: not stage | bool

@@ -8,6 +8,7 @@
   run_once: true
   tags:
     - run::configs
+    - run::config-sample
 
 - name: Add salt pillar to facts temporarily
   copy:
@@ -18,6 +19,7 @@
   run_once: true
   tags:
     - run::configs
+    - run::config-sample
 
 - name: Gather facts from supervisor for sample config generation
   setup:
@@ -26,6 +28,7 @@
   run_once: true
   tags:
     - run::configs
+    - run::config-sample
 
 - name: Remove pillar from facts
   file:
@@ -60,6 +63,7 @@
         mode: 0644
       tags:
         - run::configs
+        - run::config-sample
       when:
         - inventory_hostname in groups['sparkmaster']|default([])
 
@@ -132,6 +136,7 @@
         mode: 0644
       tags:
         - run::configs
+        - run::config-sample
       when:
         - inventory_hostname in groups['sparkmaster']|default([])
 

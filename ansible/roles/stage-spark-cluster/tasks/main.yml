@@ -32,7 +32,6 @@
     archive_prefix: spark/
     accept_hostkey: true
     archive: "{{ staging_path }}/spark-repo.tar"
-    version: improvement/RING-38909-ansible-playbook-to-deployment-start_spark.sh
     dest: "{{ staging_path }}../spark"
 
     repo: git@github.com:scality/spark.git

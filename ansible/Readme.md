@@ -1,26 +1,131 @@
 # Using Ansible & Containers to deploy the Spark Orphan Tool
 
+Automated deployment with Ansible is possible to ease the efforts required
+to deploy and configure the cluster. This guide intends to use the Ansible 
+virtual environment of S3C Federation. It is built around recent Ansible 2.9
+which means you may require an updated S3C virtual environment to use these 
+plabooks for deployment.
+
+For customer environments which do not have internet access from the RING 
+platform will need to have the tool staged (copied over FTP or other methods) 
+for deployment can use the Spark offline archive. It will stage Ansible into
+``/root/spark/ansible`` for deployment if the Federation version on the 
+supervisor is new enough. If not, inside ``/var/tmp/staging`` are the tarballs
+of the container images and git repository. They can be deployed with the 
+manual steps of the TSKB.
+
+## Deploying Spark Ansible via run.yml playbook 
+
+### Requirements
+The run.yml playbook uses Ansible and the community.general Ansible modules for
+Docker to load container images.   
+``config-SAMPLE.yml`` 
+
+Ansible is configured to expect ssh keys to connect with inventory hosts.
+The `--ask-pass` flag can be passed to `ansible-playbook` to request the 
+password for the user instead, or set in persistently in `ansible.cfg`.
+
+* The inventory defines the following groups:
+  * sparkmaster
+  * sparkworkers
+  * supervisor
+    * Used to provide a ``config-SAMPLE.yml`` Spark config for review.
+    * Requirement can be disabled by using ``--skip-tags run::config-sample``
+    which disbles generating a sample spark config. This option requires the
+    user to build their own ``config.yml`` from the ``config-template.yml``.
+* Define a registry user who can pull spark images:
+  * Inside `inventory` it will be `registry_user`
+  * As a command line variable it will be `REGISTRY_USER`
+* Define the password for the user:
+  * Inside `inventory` it will be `registry_password`
+  * As a command line variable it will be `REGISTRY_PASSWORD`
+
+
+### Offline mode deployment
+
+
+Inside the http://github.com/scality/spark repository ansible directory is a
+``spark-offline-archive.run``. As the archive is a large binary/tarball it is
+stored with Git LFS. To download via git requires installing Git LFS in addition
+to git on your laptop.
+
+1. Install Git LFS on your laptop
+2. Download the available offline archive from github LFS
+   1. Git clone the repository
+      ```commandline
+      git clone git@github.com:scality/spark.git
+      ```
+   2. Change directories into the repo
+      ```commandline
+      cd ./spark
+      ```
+   3. Pull the additional LFS files
+      ```commandline
+      git lfs pull
+      ```
+3. Verify you have the self extracting archive
+   ```commandline
+   ls ./ansible/spark-offline-archive.run
+   ```
+   ```text
+   -rwxrwxr-x. 1 user user 3403251996 May 12 08:37 ./ansible/spark-offline-archive.run
+   ```
+4. Copy the offline archive to the supervisor via available methods.
+5. On the supervisor extract the offline archive
+   ```commandline
+   chmod +x ./spark-offline-archive.run
+   ./spark-offline-archive.run
+   ```
+6. Generate an inventory file from the inventory.sample
+7. Deploy the spark cluster
+   ```commandline
+   ansible-playbook -i inventory --tags deploy run.yml 
+   ```
+
+## Online mode deployment
+
+The primary mode of deployment is Offline. The online mode has more requirements
+which are often not met by the customers network connectivity.
+
+Online mode presumes that:
+1. the supervisor and all members of groups sparkmaster and sparkworkers have 
+internet access
+2. the host the spark ansible ``run.yml`` playbook is run from either has an ssh 
+agent, or was forwarded an agent on connection, which includes an ssh key that 
+provides access to the GitHub Scality repositories (can git clone). 
+3. the registry user and password are defined in inventory, or being set on the 
+CLI when executing the deployment.
+
+```commandline
+ansible-playbook -i inventory --tags deploy -e "REGISTRY_USER=User_Name" -e "REGISTRY_PASSWORD=asjdfaklsjflkajshdf" run.yml 
+```
 
 ## Building the Spark offline archive
 
-Customer environments which are dark sites or do not have internet access from
-the RING platform will need to have the tool staged (copied over FTP or other
-methods) for deployment. This can be achieved by using Ansible directly (given 
-the correct version and modules), or by using a prebuilt container with Ansible 
-and mapping the ssh-agent and keys into the container.
+### Using the Ansible playbook 
 
-### Requirements
+Requirements:
+* Ansible 2.9 (built and tested against)
+* Ansible Galaxy community.general collection
+* A host in the ``[staging]`` group with internet access
+* SSH Agent/Keys which provide access to the Scality GitHub repository
+* Defining the registry.scality.com credentials in inventory or command line
 
-Ansible relies on SSH connection. Whatever machine the staging host is run on
-(even localhost) must be accessible via ssh. The script also will install 
-makeself package to build and archive which means the ssh key must work for
-the root user.
+When registry_user and registry_password (lowercase) Ansible variables are 
+defined in the inventory file: 
 
-* Have your SSH key setup in github and authorized/enabled for SSO. 
-  * Should be able to `git clone git@github.com:scality/spark.git` using the ssh
-  key without errors.
+```commandline
+ansible-playbook -i inventory --tags stage run.yml 
+```
 
-#### The spark-deployment container requirements
+When REGISTRY_USER and REGISTRY_PASSWORD (UPPERCASE) Docker environment 
+variables are defined on the command line: 
+
+```commandline
+ansible-playbook -i inventory --tags stage -e "REGISTRY_USER=User_Name" -e "REGISTRY_PASSWORD=asjdfaklsjflkajshdf" run.yml 
+```
+
+### Using the spark-deployment container
 The spark-deployment container has Ansible and modules built in, there is no 
 need to install Ansible or any Ansible modules. An ssh agent and volume mappings
 allow the container to ssh to systems with the same experience as the user from
@@ -36,23 +141,25 @@ inventory file you will see the same variables in all lower case.
  
 #### The spark-deployment container
 
-##### Pulling the spark-deployment image from registry
+Using this method currently requires Podman as the Docker runtime currently does
+not provide the ``keep-id`` User Namespace required to properly pass along SSH
+Agent and/or Keys to the container.
+
+1. Pulling the spark-deployment image from registry
+   ```commandline
+   [docker|podman] pull registry.scality.com/spark/spark-deployment:latest
+   ```
+
+2. Build the spark-deployment image
+
+   ```commandline
+   cd spark/ansible
+   [docker|podman] build . -f Containerfile -t registry.scality.com/spark/spark-deployment:latest
+   ```
+
+3. Using Podman generate the offline archive 
 ```commandline
-[docker|podman] pull registry.scality.com/spark/spark-deployment:latest
-```
-
-##### Building the spark-deployment image locally
-
-If you do not have access to registry.scality.com you an build the image.
-
-```commandline
-cd spark/ansible
-docker build . -f Containerfile -t registry.scality.com/spark/spark-deployment:latest
-```
-
-##### Generating the spark offline archive with the spark-deployment container 
-```commandline
-[docker|podman] run --privileged \
+podman run --privileged \
   --rm \
   --net host \
   -i -t \
@@ -60,7 +167,7 @@ docker build . -f Containerfile -t registry.scality.com/spark/spark-deployment:l
   --volume /var/tmp:/var/tmp:rw \
   -e "SSH_AUTH_SOCK=/ssh-agent" \
   --volume ${SSH_AUTH_SOCK}:/ssh-agent \
-  -e "REGISTRY_USER=Trevor_Benson" \
+  -e "REGISTRY_USER=User_Name" \
   -e "REGISTRY_PASSWORD=<CLI/API_KEY>" \
   -v ~/.ssh:/ansible/.ssh:rw \
   registry.scality.com/spark/spark-deployment:latest \
@@ -159,38 +266,9 @@ stor-06                    : ok=1    changed=0    unreachable=0    failed=0    s
 
 ```
 
-
 The resulting SFX/SEA (Self eXtracting File / Self Extracting Archive) will be 
 written to ``/var/tmp/spark-offline-archive.run``. Get it staged onto the 
 supervisor and execute it. It will provide all the components to continue with
-a fully offline deployment of the spark tools.
+a fully offline deployment of the spark tools either via Ansible or manually.
 
-#### The Spark Ansible run.yml playbook requirements
-The run.yml playbook uses Ansible, the community.general Ansible modules and/or
-the local Container Runtime Engine (docker or podman) on the staging host.
-
-Ansible is configured to expect ssh keys to connect with inventory hosts.
-The `--ask-pass` flag can be passed to `ansible-playbook` to request the 
-password for the user instead, or set in persistently in `ansible.cfg`.
-
-* Define a registry user who can pull spark images:
-  * Inside `inventory` it will be `registry_user`
-  * As a command line variable it will be `REGISTRY_USER`
-* Define the password for the user:
-  * Inside `inventory` it will be `registry_password`
-  * As a command line variable it will be `REGISTRY_PASSWORD`
-
-#### Using the Spark Ansible run.yml playbook
-
-If you define the registry user and password in the inventory, then run:
-
-```commandline
-ansible-playbook -i inventory --tags stage run.yml 
-```
-
-Otherwise define them on the CLI
-
-```commandline
-ansible-playbook -i inventory --tags stage -e "REGISTRY_USER=User_Name" -e "REGISTRY_PASSWORD=asjdfaklsjflkajshdf" run.yml 
-```
 
