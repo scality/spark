@@ -1,0 +1,29 @@
+#!/bin/bash
+
+{%- if inventory_hostname in groups['sparkmaster'] %}
+
+docker run --rm -dit --net=host --name spark-master \
+   --hostname=spark-master \
+{% for h in groups['sparkmaster'] %}
+   --add-host=spark-master:{{ hostvars[h].ansible_host }} \
+{% endfor %}
+{% for h in groups['sparkworkers'] %}
+   --add-host={{ hostvars[h].ansible_fqdn.split('.')[0] }}:{{ hostvars[h].ansible_host }} \
+{% endfor %}
+   {{ master_container_image }}
+{%- endif %}
+
+{% if inventory_hostname in groups['sparkworkers'] %}
+
+docker run --rm -dit --net=host --name spark-worker \
+   --hostname=spark-worker \
+{% for h in groups['sparkmaster'] %}
+   --add-host=spark-master:{{ hostvars[h].ansible_host }} \
+{% endfor %}
+   --add-host=spark-worker:{{ ansible_ssh_host }} \
+{% for h in groups['sparkworkers'] %}
+   --add-host={{ hostvars[h].ansible_fqdn.split('.')[0] }}:{{ hostvars[h].ansible_host }} \
+{% endfor %}
+   -v /var/tmp:/tmp \
+   {{ worker_container_image }}
+{% endif %}

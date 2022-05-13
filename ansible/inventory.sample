@@ -1,0 +1,122 @@
+# -------------------------------------------
+# This is the base inventory file
+# -------------------------------------------
+# HOW TO DEPLOY SPARK
+# Create the hosts and use their resolvable
+# host shortname. If they are not resolvable
+# from DNS, then add them to /etc/hosts on
+# all spark workers.
+#
+# Create groups sparkmaster and sparkworkers.
+# If you want to run a spark worker on your
+# the same server running the spark master
+# then place it in both groups.
+#
+# A fully collocated environment with both
+# S3C and srebuildd connector local to the
+# spark worker does not need any other groups
+
+# A decoupled architecture which requires an
+# nginx sidecar will need groups for
+# runners_s3 and runners_srebuildd. Place all
+# storage nodes with srebuildd connectors into
+# runners_srebuildd. Place all stateless S3C
+# connectors into runners_s3. As long as a
+# spark-worker is properly defined in one of
+# the two groups if it hosts s3c or srebuildd
+# the sidecar will skip providing a locally
+# port to load balance the service calls.
+#
+#
+# -------------------------------------------
+
+# If you want to use existing inventory hosts you need to define them under the
+# hosts shortname (ie. `hostname -s`) and is resolvable via `/etc/hosts` or DNS
+stor-01    ansible_host=10.100.2.25
+stor-02    ansible_host=10.100.2.40
+stor-03    ansible_host=10.100.1.80
+stor-04    ansible_host=10.100.3.171
+stor-05    ansible_host=10.100.7.67
+stor-06    ansible_host=10.100.4.97
+super      ansible_host=10.100.7.27
+
+#conn-01    ansible_host=10.100.2.34
+#conn-02    ansible_host=10.100.2.46
+#conn-03    ansible_host=10.100.3.83
+#worker-01  ansible_host=10.100.3.73
+#worker-02  ansible_host=10.100.4.93
+#worker-03  ansible_host=10.100.4.39
+rhel9-jump ansible_host=192.168.122.179
+#staging_host ansible_host={{IP_ADDRESS}}
+
+
+[all:vars]
+staging_path=/var/tmp/staging/
+staging_archive=spark-offline-archive.run
+offline_mode=True
+registry_user="Trevor_Benson"
+registry_password=""
+
+[staging]
+# Using localhost requires ssh is enabled, and docker or podman is installed.
+# Set the {{ docker }} variable to the installed container runtime engine
+localhost docker=podman
+
+[sparkcluster:children]
+sparkmaster
+sparkworkers
+
+# Place 1  into sparkmaster group
+[sparkmaster]
+#stor-06
+
+# Place all workers into sparkworkers. Add your master to run a worker on it.
+[sparkworkers]
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
+#stor-06
+#conn-01
+#conn-02
+#conn-03
+#worker-01
+#worker-02
+#worker-03
+
+# To automatically fill out the config.yml define a supervisor group
+# and include an ansible host in the group for the supervisor
+[supervisor]
+#super
+
+# When running decoupled (standalone) S3C connectors as spark workers define the
+# runners_srebuildd group and put all storage nodes with the srebuildd connector
+# inside the group. A spark-sidecar (nginx load balancer) will be created which
+# will provide a 127.0.0.1:81 for the spark worker so a consistent srebuildd_url
+# can be defined in ``config.yml``. The sidecar will round robin over all
+# members of the runners_srebuildd group.
+[runners_srebuildd]
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
+#stor-06
+
+# When running decoupled (standalone) storage nodes as spark workers define the
+# runners_s3 group and put all stateless S3C with the scality-s3 container
+# inside the group. A spark-sidecar (nginx load balancer) will be created which
+# will provide a 127.0.0.1:8000 for the spark worker so a consistent endpoint
+# can be defined in ``config.yml``. The sidecar will round robin over all
+# members of the runners_s3 group.
+[runners_s3]
+#stor-01
+#stor-02
+#stor-03
+#stor-04
+#stor-05
+#stor-06
+#conn-01
+#conn-02
+#conn-03

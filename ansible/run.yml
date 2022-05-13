@@ -1,0 +1,14 @@
+---
+- hosts: staging
+  roles:
+    - role: stage-spark-cluster
+      tags:
+        - never
+        - stage
+
+- hosts: sparkmaster:sparkworkers
+  roles:
+    - role: run-spark-cluster
+      tags:
+        - never
+        - deploy
