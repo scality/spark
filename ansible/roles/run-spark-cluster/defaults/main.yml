@@ -18,7 +18,7 @@ vcpus: "{{ ansible_play_hosts|
 worker_vcpus: "{{ dict(ansible_play_hosts|zip(vcpus)) }}"
 vcpus_average: "{{ (worker_vcpus.values()|sum / worker_vcpus.values()|length) | int }}"
 
-instance_factor: "{% if vcpus_average|int <= 8 %}1{% elif vcpus_average|int <= 24 %}2{% elif vpus_average|int >= 32 %}3{% endif %}"
+instance_factor: "{% if vcpus_average|int <= 8 %}1{% elif vcpus_average|int <= 24 %}2{% elif vcpus_average|int >= 32 %}3{% endif %}"
 mems_max_per_executor: "{{ mems_average / instance_factor }}"
 mems_min_per_executor: "{{ (mems_min_no_pressure|int) / (instance_factor|int) }}"
 
@@ -27,4 +27,4 @@ bucket_name: scality-spark-cleanup
 instance_reduction: "{% if groups['sparkmaster'][0] in groups['sparkworkers'] %}-1{% else %}0{% endif %}"
 executor_cores: "{% if vcpus_average|int >= 72 %}3{% elif vcpus_average|int >= 48 %}2{% else %}1{% endif %}"
 executor_instances: "{{ (instance_reduction | int + (instance_factor | int * (groups['sparkworkers'] | count))) | int }}"
-executor_memory: "{% if mems_min_per_executor|int <= 1 %}1{% elif mems_min_per_executor|int <= 8 %}4{% elif vpus_average|int >= 12 %}6{% endif %}"
+executor_memory: "{% if mems_min_per_executor|int <= 1 %}1{% elif mems_min_per_executor|int <= 8 %}4{% elif vcpus_average|int >= 12 %}6{% endif %}"
