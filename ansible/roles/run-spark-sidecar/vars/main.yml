@@ -1,0 +1,3 @@
+---
+
+nginx_container_image: docker.io/library/nginx:1.21.6-alpine
