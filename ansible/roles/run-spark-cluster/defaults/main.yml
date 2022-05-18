@@ -1,7 +1,7 @@
 ---
 
 staging_archive: spark-offline-archive.run
-staging_path: /var/tmp/staging
+staging_path: /var/tmp/staging/
 
 global_data_host: "{{ data_host | default(ansible_host) }}"
 mems: "{{ ansible_play_hosts|

@@ -13,7 +13,7 @@ else
     echo "SUDO Enironment variable set. Using sudo to execute all commands."
 fi
 
-${sudo} mv ./staging /var/tmp/
+${sudo} cd ../ && mv ./staging /var/tmp/
 ${sudo} tar -C /root -x -v -f {{ staging_path }}spark-repo.tar spark/ansible
 ${sudo} echo -e "{{ staging_archive }} has extracted itself.\n"
 ${sudo} echo -e "To continue with the staged deployment cd into ~/spark/ansible"

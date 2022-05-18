@@ -107,9 +107,9 @@
         state: directory
         path: "{{ staging_path }}"
       tags:
-        - run::staging
+        - run::deployment
 
-    - name: Synchronize the repository and master tarball
+    - name: Synchronize the master tarball
       synchronize:
         src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
         dest: "{{ staging_path }}"
@@ -118,7 +118,16 @@
       when:
         - inventory_hostname in groups['sparkmaster']|default([])
       tags:
-        - run::staging
+        - run::deployment
+
+    - name: Deploy the spark repository on spark master
+      unarchive:
+        src: "{{ staging_path }}spark-repo.tar"
+        dest: /root/
+      when:
+        - inventory_hostname in groups['sparkmaster']|default([])
+      tags:
+        - run::deployment
 
     - name: Ensure spark config directory exists
       file:
@@ -153,7 +162,7 @@
       when:
         - inventory_hostname in groups['sparkmaster']|default([])
       tags:
-        - run::staging
+        - run::deployment
 
     - name: Synchronize the worker and s3utils tarball
       synchronize:
@@ -165,7 +174,7 @@
       when:
         - inventory_hostname in groups['sparkworkers']|default([])
       tags:
-        - run::staging
+        - run::deployment
 
     - name: Load the worker and s3utils containers
 #      docker_image:
@@ -181,7 +190,7 @@
       when:
         - inventory_hostname in groups['sparkworkers']|default([])
       tags:
-        - run::staging
+        - run::deployment
   when: offline_mode | bool
 
 - name: Start the spark cluster
