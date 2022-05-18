@@ -27,9 +27,6 @@ http {
 {% for h in groups['runners_srebuildd'] %}
         server {{ hostvars[h].ansible_host }}:81;
 {% endfor %}
-{% for h in groups['runners_storage'] %}
-        server {{ hostvars[h].ansible_host }}:81;
-{%- endfor %}
     }
 
 {% if not inventory_hostname in groups['runners_s3'] %}
