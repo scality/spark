@@ -88,13 +88,14 @@
       tags:
         - run::images
 
-    - name: Pull {{ worker_container_image }} and {{ s3utils_container_image }} from registry
+    - name: Pull containers from registries
       container_image:
         name: "{{ item }}"
         state: present
       with_items:
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
+        - "{{ nginx_container_image }}"
       when:
         - inventory_hostname in groups['sparkworkers']|default([])
       tags:
@@ -171,6 +172,7 @@
       with_items:
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
+        - "{{ nginx_container_image }}"
       when:
         - inventory_hostname in groups['sparkworkers']|default([])
       tags:
@@ -187,6 +189,7 @@
       with_items:
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
+        - "{{ nginx_container_image }}"
       when:
         - inventory_hostname in groups['sparkworkers']|default([])
       tags:
@@ -198,4 +201,3 @@
     /usr/local/bin/start_spark.sh
   tags:
     - run::cluster
-

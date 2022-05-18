@@ -72,12 +72,12 @@ sparkworkers
 
 # Place all workers into sparkworkers. Add your master to run a worker on it.
 [sparkworkers]
-#stor-01
-#stor-02
+stor-01
+stor-02
 #stor-03
 #stor-04
-#stor-05
-#stor-06
+stor-05
+stor-06
 #conn-01
 #conn-02
 #conn-03
@@ -97,7 +97,7 @@ sparkworkers
 # can be defined in ``config.yml``. The sidecar will round robin over all
 # members of the runners_srebuildd group.
 [runners_srebuildd]
-#stor-01
+stor-01
 #stor-02
 #stor-03
 #stor-04
@@ -112,7 +112,7 @@ sparkworkers
 # members of the runners_s3 group.
 [runners_s3]
 #stor-01
-#stor-02
+stor-02
 #stor-03
 #stor-04
 #stor-05
