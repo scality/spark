@@ -12,3 +12,24 @@
       tags:
         - never
         - deploy
+
+- hosts: sparkworkers:!runners_s3:!runners_srebuildd
+  roles:
+    - role: run-spark-sidecar
+      tags:
+        - never
+        - sidecar
+
+- hosts: sparkworkers:!runners_s3
+  roles:
+    - role: run-spark-sidecar
+      tags:
+        - never
+        - sidecar
+
+- hosts: sparkworkers:!runners_srebuildd
+  roles:
+    - role: run-spark-sidecar
+      tags:
+        - never
+        - sidecar

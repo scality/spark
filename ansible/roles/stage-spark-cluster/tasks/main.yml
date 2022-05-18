@@ -43,13 +43,14 @@
     {{ docker }} login --username {{ registry_user }} --password {{ registry_password }}  {{ registry }}
   when: registry == 'registry.scality.com'
 
-- name: Pull containers from registry {{ master_container_image.split('/')[0] | lower }}
+- name: Pull containers from registry
   shell: |
     {{ docker }} pull {{ item }}
   with_items:
     - "{{ master_container_image }}"
     - "{{ worker_container_image }}"
     - "{{ s3utils_container_image }}"
+    - "{{ nginx_container_image }}"
 
 - name: Save the images into the staging directory
   shell: |
@@ -58,6 +59,7 @@
     - "{{ master_container_image }}"
     - "{{ worker_container_image }}"
     - "{{ s3utils_container_image }}"
+    - "{{ nginx_container_image }}"
 
 - name: Generate setup.sh for makeself
   template:
