@@ -22,7 +22,7 @@ http {
     }
 {% endif %}
 
-{% if not inventory_hostname in groups['runners_srebiuldd'] %}
+{% if not inventory_hostname in groups['runners_srebuildd'] %}
     upstream srebuildd {
         keepalive 256;
 {% for h in groups['runners_srebuildd'] %}
@@ -61,7 +61,7 @@ http {
         listen 127.0.0.1:81;
 
         access_log /logs/sparkworker-sidecar-srebuildd-http.log combined;
-        error_log /logs/sparkworker-sidecar-srebiuldd-http.err.log warn;
+        error_log /logs/sparkworker-sidecar-srebuildd-http.err.log warn;
 
         location / {
           proxy_pass http://srebuildd;
