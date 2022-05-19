@@ -2,7 +2,8 @@
 
 {%- if inventory_hostname in groups['sparkmaster'] %}
 docker stop spark-master
-{%- endif %}
+{% endif %}
+
 {% if inventory_hostname in groups['sparkworkers'] %}
- spark-worker
+docker stop spark-worker
 {% endif %}
