@@ -14,11 +14,22 @@
     dest: /etc/scality/spark/sidecar/nginx.conf
     mode: 0640
 
+- name: Copy start_sidecar.sh
+  template:
+    src: start_sidecar.sh.j2
+    dest: /usr/local/bin/start_sidecar.sh
+    mode: 0744
+  tags:
+    - run::configs
+
+- name: Copy stop_sidecar.sh
+  template:
+    src: stop_sidecar.sh.j2
+    dest: /usr/local/bin/stop_sidecar.sh
+    mode: 0744
+  tags:
+    - run::configs
+
 - name: deploy the sidecar container.
   shell: |
-    docker run -dit --rm \
-      --net host \
-      --name spark-sidecar \
-      -v /var/log/scality/spark/sidecar:/logs/:rw \
-      -v /etc/scality/spark/sidecar/nginx.conf:/etc/nginx/nginx.conf:ro \
-      {{ nginx_container_image }}
+    /usr/local/bin/stop_sidecar.sh ; /usr/local/bin/start_sidecar.sh

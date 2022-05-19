@@ -1,0 +1,8 @@
+#!/bin/bash
+
+docker run -dit --rm \
+      --net host \
+      --name spark-sidecar \
+      -v /var/log/scality/spark/sidecar:/logs/:rw \
+      -v /etc/scality/spark/sidecar/nginx.conf:/etc/nginx/nginx.conf:ro \
+      {{ nginx_container_image }}

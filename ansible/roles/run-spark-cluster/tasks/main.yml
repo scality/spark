@@ -39,10 +39,18 @@
   tags:
     - run::configs
 
-- name: Copy spark_start.sh
+- name: Copy start_spark.sh
   template:
     src: start_spark.sh.j2
     dest: /usr/local/bin/start_spark.sh
+    mode: 0744
+  tags:
+    - run::configs
+
+- name: Copy stop_spark.sh
+  template:
+    src: stop_spark.sh.j2
+    dest: /usr/local/bin/stop_spark.sh
     mode: 0744
   tags:
     - run::configs
@@ -198,6 +206,6 @@
 
 - name: Start the spark cluster
   shell: |
-    /usr/local/bin/start_spark.sh
+    /usr/local/bin/stop_spark.sh ; /usr/local/bin/start_spark.sh
   tags:
     - run::cluster
