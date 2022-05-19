@@ -22,12 +22,14 @@ http {
     }
 {% endif %}
 
+{% if not inventory_hostname in groups['runners_srebiuldd'] %}
     upstream srebuildd {
         keepalive 256;
 {% for h in groups['runners_srebuildd'] %}
         server {{ hostvars[h].ansible_host }}:81;
 {% endfor %}
     }
+{% endif %}
 
 {% if not inventory_hostname in groups['runners_s3'] %}
     server {
