@@ -30,6 +30,10 @@
   tags:
     - run::configs
 
-- name: deploy the sidecar container.
+- name: Stop any running sidecar container
+  shell: |
+    /usr/local/bin/stop_sidecar.sh ; /usr/local/bin/start_sidecar.sh
+
+- name: Start the sidecar container.
   shell: |
     /usr/local/bin/stop_sidecar.sh ; /usr/local/bin/start_sidecar.sh

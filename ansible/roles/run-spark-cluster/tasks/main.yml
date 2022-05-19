@@ -118,7 +118,7 @@
       tags:
         - run::deployment
 
-    - name: Synchronize the master tarball
+    - name: Synchronize the master image
       synchronize:
         src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
         dest: "{{ staging_path }}"
@@ -173,7 +173,7 @@
       tags:
         - run::deployment
 
-    - name: Synchronize the worker and s3utils tarball
+    - name: Synchronize the workers images
       synchronize:
         src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
         dest: "{{ staging_path }}"
@@ -204,8 +204,14 @@
         - run::deployment
   when: offline_mode | bool
 
+- name: Stop any running spark cluster
+  shell: |
+    /usr/local/bin/stop_spark.sh
+  tags:
+    - run::cluster
+
 - name: Start the spark cluster
   shell: |
-    /usr/local/bin/stop_spark.sh ; /usr/local/bin/start_spark.sh
+    /usr/local/bin/start_spark.sh
   tags:
     - run::cluster
