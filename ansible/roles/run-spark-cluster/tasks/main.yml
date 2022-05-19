@@ -207,6 +207,7 @@
 - name: Stop any running spark cluster
   shell: |
     /usr/local/bin/stop_spark.sh
+  ignore_errors: true
   tags:
     - run::cluster
 

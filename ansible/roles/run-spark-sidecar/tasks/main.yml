@@ -32,8 +32,13 @@
 
 - name: Stop any running sidecar container
   shell: |
-    /usr/local/bin/stop_sidecar.sh ; /usr/local/bin/start_sidecar.sh
+    /usr/local/bin/stop_sidecar.sh
+  ignore_errors: true
+  tags:
+    - run::sidecar
 
 - name: Start the sidecar container.
   shell: |
-    /usr/local/bin/stop_sidecar.sh ; /usr/local/bin/start_sidecar.sh
+    /usr/local/bin/start_sidecar.sh
+  tags:
+    - run::sidecar
