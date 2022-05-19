@@ -22,6 +22,7 @@ http {
     }
 {% endif %}
 
+{% if not inventory_hostname in groups['runners_srebiuldd'] %}
     upstream srebuildd {
         keepalive 256;
 {% for h in groups['runners_srebuildd'] %}
