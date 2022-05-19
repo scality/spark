@@ -4,5 +4,5 @@
 docker stop spark-master
 {%- endif %}
 {% if inventory_hostname in groups['sparkworkers'] %}
-docker stop spark-worker
+ spark-worker
 {% endif %}
