@@ -27,4 +27,4 @@ bucket_name: scality-spark-cleanup
 instance_reduction: "{% if groups['sparkmaster'][0] in groups['sparkworkers'] %}-1{% else %}0{% endif %}"
 executor_cores: "{% if vcpus_average|int >= 72 %}3{% elif vcpus_average|int >= 48 %}2{% else %}1{% endif %}"
 executor_instances: "{{ (instance_reduction | int + (instance_factor | int * (groups['sparkworkers'] | count))) | int }}"
-executor_memory: "{% if mems_min_per_executor|int <= 1 %}1{% elif mems_min_per_executor|int <= 8 %}4{% elif vcpus_average|int >= 12 %}6{% endif %}"
+executor_memory: "{% if mems_min_per_executor|int <= 1 %}1{% elif mems_min_per_executor|int <= 8 %}4{% elif mems_min_per_executor|int >= 12 %}6{% endif %}"
