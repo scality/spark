@@ -9,8 +9,11 @@ spark = SparkSession.builder.appName("Check Split Objects P0").getOrCreate()
 RING = "IT"
 
 RING = sys.argv[1]
+PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
-files = "file:///fs/spark/listkeys-%s.csv" % RING
+# files = "file:///fs/spark/listkeys-%s.csv" % RING
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 
@@ -26,7 +29,8 @@ dfCOSsingle = dfCOSsingle.groupBy("_c1").count()
 
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
-mainchunk = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+# mainchunk = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+mainchunk = "%s://%s/%s/single-MAIN.csv" % (PROTOCOL, PATH, RING)
 dfARCsingle.write.format('csv').mode("overwrite").options(header='true').save(mainchunk)
 
 #list the ARC child KEYS
@@ -42,7 +46,8 @@ dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
-singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
+# singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
+singlesync = "%s://%s/%s/single-SYNC.csv" % (PROTOCOL, PATH, RING)
 dfARCSYNC.write.format('csv').mode("overwrite").options(header='true').save(singlesync)
 
 
@@ -59,6 +64,7 @@ dfCOCSYNC = dfCOCSYNC.withColumn("_c1",F.expr("substring(_c1, 1, length(_c1)-14)
 
 dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
-singlesync = "file:///fs/spark/output/output-single-BELOW-SPLIT-%s.csv" % RING
+# singlesync = "file:///fs/spark/output/output-single-BELOW-SPLIT-%s.csv" % RING
+singlesync = "%s://%s/%s/single-BELOW-SPLIT.csv" % (PROTOCOL, PATH, RING)
 dfARCSYNC.write.format('csv').mode("overwrite").options(header='true').save(singlesync)
 

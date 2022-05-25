@@ -29,6 +29,10 @@ RING = "IT"
 if len(sys.argv)> 1:
 	RING = sys.argv[1]
 
+PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
+
+
 def pad2(n):
   x = '%s' % (n,)
   return ('0' * (len(x) % 2)) + x
@@ -155,7 +159,8 @@ def blob(row):
 		return [{"key":key,"subkey":"KO","digkey":"KO","size":"KO"}]
 
 
-files = "file:///fs/spark/listkeys-%s.csv" % RING
+# files = "file:///fs/spark/listkeys-%s.csv" % RING
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 df_split = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("32")).select("_c1")
@@ -175,14 +180,16 @@ dfCOSsingle.show(20,False)
 dfARCsingle = dfARCsingle.union(dfCOSsingle)
 
 dfARCsingle.show(20,False)
-mainchunk = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+# mainchunk = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+mainchunk = "%s://%s/%s/single-MAIN.csv" % (PROTOCOL, PATH, RING)
 dfARCsingle.write.format('csv').mode("overwrite").options(header='false').save(mainchunk)
 
 rdd = dfARCsingle.rdd.map(lambda x : blob(x))
 rrdnew = rdd.flatMap(lambda x: x)
 dfnew = rdd.flatMap(lambda x: x).toDF()
 print dfnew.show(20,False)
-single = "file:///fs/spark/output/output-single-%s.csv" % RING
+# single = "file:///fs/spark/output/output-single-%s.csv" % RING
+single = "%s://%s/%s/single.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format('csv').mode("overwrite").options(header='false').save(single)
 
 df_sync = df.filter(df["_c1"].rlike(r".*000000..5.........$") & df["_c3"].rlike("16")).select("_c1")
@@ -200,7 +207,8 @@ dfARCSYNC = dfARCSYNC.union(dfCOCSYNC)
 
 print "SYNC", dfARCSYNC.show(20,False)
 
-singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
+# singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
+singlesync = "%s://%s/%s/single-SYNC.csv" % (PROTOCOL, PATH, RING)
 dfARCSYNC.write.format('csv').mode("overwrite").options(header='false').save(singlesync)
 
 
@@ -224,6 +232,7 @@ df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("
 
 print df_final_all.show(10,False)
 
-all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
+# all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
+all = "%s://%s/%s/FILE-SHAPE.csv" % (PROTOCOL, PATH, RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='false').save(all)
 

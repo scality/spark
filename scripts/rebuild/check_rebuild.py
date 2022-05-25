@@ -16,6 +16,8 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
+
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_url = "http://%s:81/rebuild/arcdata/" % srebuildd_ip
 
@@ -30,11 +32,13 @@ spark = SparkSession.builder \
       .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
 
-files = "file://%s/listkeys-%s.csv/" % ( PATH , RING)
+# files = "file://%s/listkeys-%s.csv/" % ( PATH , RING)
+files = "%s://%s/%s/listkeys.csv/" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 dfARC = df.filter( df["_c1"].rlike(r".*70$"))
 dfcARC = dfARC.groupBy("_c1").count().filter("count < 6")
 
-filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-%s.csv" % (PATH, RING)
+# filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-%s.csv" % (PATH, RING)
+filenamearc = "%s://%s/%s/spark-KEYS-TO-BE-REBUILT.csv" % (PROTOCOL, PATH, RING)
 dfcARC.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)

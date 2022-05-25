@@ -203,8 +203,8 @@ Start the new bizstorenode on all the nodes
 
 ### Make sure all the listkeys are present ( you should get as many files as ring nodes)
 ```
-#ls /ring/fs/spark/listkeys-DATA.csv/*
-#ls /ring/fs/spark/listkeys-META.csv/*
+#ls /ring/fs/spark-cleanup/DATA/listkeys.csv/*
+#ls /ring/fs/spark-cleanup/META/listkeys.csv/*
 ```
 
 
@@ -464,7 +464,7 @@ mv /ring/fs/output/output-sparse-ARC-FILES-DATA.csv /ring/fs/output/output-spars
 
 ie.of outputs:
 ```
-#cat /ring/fs/spark/output/output-sofs-SPARSE-FILE-SHAPE-INODE-META.csv/*
+#cat /ring/fs/spark-cleanup/META/sofs-SPARSE-FILE-SHAPE-INODE.csv/*
 59CB69113EF8D8A2,6470380812439705762,78360959CB69113EF8D8A2000000000801000040
 5F55B8BB214B841A,6869599920480551962,516FBB5F55B8BB214B841A000000000801000040
 554E4629A9F1A2F2,6146927686166094578,52728C554E4629A9F1A2F2000000000801000040
@@ -503,7 +503,7 @@ EEF599F5850EF40A,17218838030099346442,F70568EEF599F5850EF40A000000000801000040
 As a requirement we need to build a list of inodes with the paths.
 
 ```
-find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark/inodes-2.txt 
+find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark-cleanup/inodes-2.txt 
 ```
 
 ```
@@ -512,7 +512,7 @@ find /ring/rtl2-2/HiRes/ -printf "%i,%p\n" > /ring/fs/spark/inodes-2.txt
 
 i.e of ouputs:
 ```
-cat /ring/fs/spark/output/output-sofs-SPARSE-FILE-SHAPE-INODE-ALL-META.csv/*
+cat /ring/fs/spark-cleanup/META/sofs-SPARSE-FILE-SHAPE-INODE-ALL.csv/*
 12905586402209643114,/ring/rtl2-2/HiRes/6/1/8/01SZ2D0000359WVX.mxf,1
 9277693220508136882,/ring/rtl2-2/HiRes/2/6/8/01SP1F4604T11S4K.mxf,1
 16068291652859018778,/ring/rtl2-2/HiRes/7/1/2/01SU1B2788T11C1H.mxf,1

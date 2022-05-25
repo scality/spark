@@ -1,6 +1,6 @@
 """
 count-stripes.py:count the total stripes per sparse file
-output:output-sofs-files-COUNT-STRIPES-%RING.csv
+output:%RING/sofs-files-COUNT-STRIPES.csv
 """
 from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
@@ -19,7 +19,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
-PROT = cfg["protocol"]
+PROTOCOL = cfg["protocol"]
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -38,12 +38,14 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-single = "%s:///%s/output/output-sofs-files-%s.csv" % (PROT,PATH,RING)
+# single = "%s:///%s/output/output-sofs-files-%s.csv" % (PROT,PATH,RING)
+single = "%s:///%s/%s/sofs-files.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(single)
 
 dfneg = df.filter( df["subkey"].rlike(r"(REQUEST_TIMEOUT|empty|SCAL_*)"))
 df = df.subtract(dfneg)
 df = df.groupBy("key").count()
 
-single = "%s:///%s/output/output-sofs-files-COUNT-STRIPES-%s.csv" %  (PROT,PATH,RING)
+# single = "%s:///%s/output/output-sofs-files-COUNT-STRIPES-%s.csv" %  (PROT,PATH,RING)
+single = "%s:///%s/%s/sofs-files-COUNT-STRIPES.csv" % (PROTOCOL, PATH, RING)
 df.write.format('csv').mode("overwrite").options(header='true').save(single)

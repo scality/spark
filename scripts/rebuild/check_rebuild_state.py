@@ -17,6 +17,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_url = "http://%s:81/rebuild/arcdata/" % srebuildd_ip
 
@@ -46,7 +47,9 @@ def getarcid(row):
     except requests.exceptions.ConnectionError as e:
         return (key,"ERROR_HTTP")
 
-files = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-%s.csv" % (PATH, RING)
+
+# files = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-%s.csv" % (PATH, RING)
+files = "%s://%s/%s/spark-KEYS-TO-BE-REBUILT.csv" % (PROTOCOL, PATH, RING)
 
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
@@ -56,5 +59,6 @@ corruptednew = corrupted.toDF()
 
 df_final_all = corruptednew.filter(corruptednew["_2"] != "OK")
 
-filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-CORRUPTED-%s.csv" % (PATH, RING)
+# filenamearc = "file://%s/output/output-spark-KEYS-TO-BE-REBUILT-CORRUPTED-%s.csv" % (PATH, RING)
+filenamearc = "%s://%s/%s/spark-KEYS-TO-BE-REBUILT-CORRUPTED.csv" % (PROTOCOL, PATH, RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)

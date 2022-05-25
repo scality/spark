@@ -17,6 +17,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 
 spark = SparkSession.builder \
@@ -31,7 +32,8 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+# files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.filter( df["_c1"].rlike(r".*0801000040$") )
 df = df.groupBy("_c1").count()

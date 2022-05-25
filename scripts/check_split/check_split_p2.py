@@ -11,9 +11,13 @@ spark = SparkSession.builder.appName("Check Split Objects P2").getOrCreate()
 RING = "IT"
 
 RING = sys.argv[1]
+PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
-singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
-single = "file:///fs/spark/output/output-single-%s.csv" % RING
+# singlesync = "file:///fs/spark/output/output-single-SYNC-%s.csv" % RING
+# single = "file:///fs/spark/output/output-single-%s.csv" % RING
+singlesync = "%s://%s/%s/single-SYNC.csv" % (PROTOCOL, PATH, RING)
+single = "%s://%s/%s/single.csv" % (PROTOCOL, PATH, RING)
 dfsinglesync = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(singlesync)
 dfsingle =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(single)
 
@@ -40,6 +44,7 @@ df_final_all = df_all.withColumn('good_state', F.when( ( F.col("sum") == F.col("
 
 print df_final_all.show(10,False)
 
-all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
+# all = "file:///fs/spark/output/output-FILE-SHAPE-%s.csv" % RING
+all = "%s://%s/%s/FILE-SHAPE.csv" % (PROTOCOL, PATH, RING)
 df_final_all.write.format('csv').mode("overwrite").options(header='true').save(all)
 

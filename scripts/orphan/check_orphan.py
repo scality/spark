@@ -16,6 +16,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_url = "http://%s:81/rebuild/arcdata/" % srebuildd_ip
 
@@ -30,7 +31,8 @@ spark = SparkSession.builder \
       .config("spark.local.dir", cfg["path"]) \
      .getOrCreate()
 
-files = "file://%s/listkeys-%s.csv/" % ( PATH , RING)
+# files = "file://%s/listkeys-%s.csv/" % ( PATH , RING)
+files = "%s://%s/%s/listkeys.csv/" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 
 #check only not deleted KEYS ?
@@ -39,5 +41,6 @@ df = spark.read.format("csv").option("header", "false").option("inferSchema", "t
 dfARC = df.filter( df["_c1"].rlike(r".*70$"))
 dfcARC = dfARC.groupBy("_c1").count().filter("count < 3")
 
-filenamearc = "file://%s/output/output-spark-ARCORPHAN-%s.csv" % (PATH, RING)
+# filenamearc = "file://%s/output/output-spark-ARCORPHAN-%s.csv" % (PATH, RING)
+filenamearc = "%s://%s/%s/spark-ARCORPHAN.csv" % (PROTOCOL, PATH, RING)
 dfcARC.write.format('csv').mode("overwrite").options(header='false').save(filenamearc)

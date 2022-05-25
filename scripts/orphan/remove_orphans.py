@@ -19,6 +19,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 srebuildd_ip  = cfg["srebuildd_ip"]
 srebuildd_path  = cfg["srebuildd_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
@@ -42,17 +43,21 @@ def deletekey(row):
 	except requests.exceptions.ConnectionError as e:
 		return (key,"ERROR_HTTP")
 
-files = "file:///%s/output/output-spark-ARCORPHAN-CORRUPTED-%s.csv" % (PATH, RING)
+# files = "file:///%s/output/output-spark-ARCORPHAN-CORRUPTED-%s.csv" % (PATH, RING)
+files = "%s:///%s/%s/spark-ARCORPHAN-CORRUPTED.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
-deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-%s.csv" % (PATH, RING)
+# deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-%s.csv" % (PATH, RING)
+deletedorphans = "%s:///%s/%s/spark-DELETED-ARCORPHAN.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)
 
 
-filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-BUT-OK-LAST-%s.csv" % (PATH, RING)
+# filenamearc = "file://%s/output/output-spark-ARCORPHAN-CORRUPTED-BUT-OK-LAST-%s.csv" % (PATH, RING)
+filenamearc = "%s://%s/%s/spark-ARCORPHAN-CORRUPTED-BUT-OK-LAST.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
 rdd = df.rdd.map(deletekey).toDF()
 rdd.show(10,False)
-deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-SINGLE-%s.csv" % (PATH, RING)
+# deletedorphans = "file:///%s/output/output-spark-DELETED-ARCORPHAN-SINGLE-%s.csv" % (PATH, RING)
+deletedorphans = "%s:///%s/%s/spark-DELETED-ARCORPHAN-SINGLE.csv" % (PROTOCOL, PATH, RING)
 rdd.write.format('csv').mode("overwrite").options(header='false').save(deletedorphans)

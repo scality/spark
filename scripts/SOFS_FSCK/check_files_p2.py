@@ -1,6 +1,6 @@
 """
 check_files_p2.py: Translate (dig) the Stripes keys
-output:output/output-sofs-files-DIG-%RING.csv
+output:/%PATH/%RING/output-sofs-files-DIG.csv
 """
 
 from pyspark.sql import SparkSession, Row, SQLContext
@@ -25,6 +25,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 
 spark = SparkSession.builder \
@@ -83,7 +84,8 @@ def dig(row):
 	return [{"key":key,"subkey":subkey ,"arckey": arckey}]
 
 
-files = "file:///%s/output/output-sofs-files-%s.csv" % (PATH,RING)
+# files = "file:///%s/output/output-sofs-files-%s.csv" % (PATH,RING)
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
 
 dfneg = df.filter( df["subkey"].rlike(r"(REQUEST_TIMEOUT|empty|SCAL_*)"))
@@ -92,6 +94,7 @@ df = df.subtract(dfneg)
 rdd = df.rdd.map(lambda x : dig(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
-single = "file:///%s/output/output-sofs-files-DIG-%s.csv" % (PATH,RING)
+# single = "file:///%s/output/output-sofs-files-DIG-%s.csv" % (PATH,RING)
+single = "%s:///%s/%s/sofs-files-DIG.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
 

@@ -1,20 +1,30 @@
-master: ""
+# MASTER is the port to access the spark-master on
+master: "spark://<MASTER_IP_ADDRESS>:7077"
+# RING is the name of the ring to analyze
 ring: "DATA"
-path: "/fs/spark/"
+# PROTOCOL can be file or s3a. File requires SOFS folder with DLM.
 protocol: file      # Protocol can be either file or s3a.
-# Protocol file requires SOFS+DLM & path is the folder to write to within the SOFS volume.
-# Protocol s3a requires access/secret keys & endpoint URL & path is the bucket name within s3 to use.
+# PATH is defined differently depending on the PROTOCOL selected.
+# Example for a s3a define bucket name:
+# path: "spark-cleanup"
+# Example for file define the absolute path:
+# path: "/ring/fs/spark-cleanup"
+path: ""
 srebuildd_ip: "127.0.0.1"
 srebuildd_chord_path: "rebuild/chord-DATA"
 srebuildd_arc_path: "rebuild/arc-DATA"
 srebuildd_arcdata_path: "rebuild/arcdata-DATA"
+# RETENTION sets time range of RING keys to ignore from listing.
 retention: 604800
+# ARC_PROTECTION should match the sproxyd/sfused configuration
 arc_protection: 8+4
+# COS_PROTECTION should match the sproxyd arc replication.
 cos_protection: 3
+# S3 when using PROTOCOL s3a fill in the access_key and secret_key
 s3:
   access_key: ""
   secret_key: ""
-  endpoint: ""
+  endpoint: "http://127.0.0.1:8000"
 sup:
   url: "https://127.0.0.1:2443"
   login: "root"

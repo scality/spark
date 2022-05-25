@@ -15,7 +15,8 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
-PROT = cfg["protocol"]
+PROTOCOL = cfg["protocol"]
+
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -34,7 +35,7 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-files = "%s://%s/output/output-sparse-ARC-FILES-%s.csv" % (PROT, PATH, RING)
+files = "%s://%s/%s/sparse-ARC-FILES.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
 
 print df.groupBy("count").agg(F.count("count")).show() 

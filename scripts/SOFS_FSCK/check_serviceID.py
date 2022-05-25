@@ -14,6 +14,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 
 def sid_parse(row):
@@ -33,7 +34,8 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
-files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+# files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.select("_c1").distinct()
 sid = df.rdd.map(sid_parse)

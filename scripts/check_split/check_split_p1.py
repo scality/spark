@@ -15,6 +15,8 @@ spark = SparkSession.builder.appName("Check Split Objects P1").getOrCreate()
 RING = "IT"
 
 RING = sys.argv[1]
+PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 
 def pad2(n):
@@ -151,7 +153,8 @@ def blob(row):
 	except requests.exceptions.ConnectionError as e:
 		return [{"key":key,"subkey":"KO_HTTP","digkey":"KO_HTTP","size":"KO_HTTP"}]
 
-files = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+# files = "file:///fs/spark/output/output-single-MAIN-%s.csv" % RING
+files = "%s://%s/%s/single-MAIN.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(files)
 
 df.show(10,False)
@@ -159,6 +162,7 @@ rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 print dfnew.show(20,False)
 
-single = "file:///fs/spark/output/output-single-%s.csv" % RING
+# single = "file:///fs/spark/output/output-single-%s.csv" % RING
+single = "%s://%s/%s/single.csv" % (PROTOCOL, PATH, RING)
 dfnew.write.format('csv').mode("overwrite").options(header='true').save(single)
 

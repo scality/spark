@@ -1,7 +1,7 @@
 
 """
 check_files_p1.py: Check using the sparse micro-service the keys.
-output:output/output-sofs-files-%RING.csv
+output:/%PATH/%RING/sofs-files.csv
 """
 from pyspark.sql import SparkSession, Row, SQLContext
 import pyspark.sql.functions as F
@@ -22,6 +22,7 @@ else:
 	RING = cfg["ring"]
 
 PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 
 spark = SparkSession.builder \
@@ -69,7 +70,8 @@ def blob(row):
 	except Exception as e:
 		return [{"key":mainkey,"subkey":"KO"}]
 
-files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+# files = "file:///%s/listkeys-%s.csv" % (PATH, RING)
+files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 df = df.filter( df["_c1"].rlike(r".*0801000040$") )
 df = df.groupBy("_c1").count()
@@ -86,5 +88,6 @@ sparse = sparse.toDF()
 sparse_subkey = sparse.rdd.map(lambda x : blob(x))
 sparse_subkey = sparse_subkey.flatMap(lambda x: x).toDF()
 
-single = "file:///%s/output/output-sofs-files-%s.csv" % (PATH , RING)
+# single = "file:///%s/output/output-sofs-files-%s.csv" % (PATH , RING)
+single = "%s:///%s/%s/sofs-files.csv" % (PROTOCOL, PATH, RING)
 sparse_subkey.write.format('csv').mode("overwrite").options(header='true').save(single)

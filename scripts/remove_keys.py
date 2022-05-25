@@ -24,6 +24,8 @@ else:
 
 RING = "IT"
 RING = sys.argv[1]
+PATH = cfg["path"]
+PROTOCOL = cfg["protocol"]
 
 spark = SparkSession.builder.appName("Removes Keys ring:"+RING).getOrCreate()
 
@@ -66,10 +68,12 @@ def delete_key(key, dsolist):
 s = Supervisor(url=url,login=user,passwd=password)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
 
-filenamearc = "file:///fs/spark/output/output-spark-KEYS_TOBE_REMOVED-%s.csv" % RING
+# filenamearc = "file:///fs/spark/output/output-spark-KEYS_TOBE_REMOVED-%s.csv" % RING
+filenamearc = "%s://%s/%s/spark-KEYS_TOBE_REMOVED.csv" % (PROTOCOL, PATH, RING)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(filenamearc)
 
 df_keys = df.rdd.map(lambda x:delete_key(x,listm))
 df_keys = df_keys.toDF()
-delete_keys = "file:///fs/spark/output/removed_keys-%s.csv" % RING
+# delete_keys = "file:///fs/spark/output/removed_keys-%s.csv" % RING
+delete_keys = "%s://%s/%s/removed_keys.csv" % (PROTOCOL, PATH, RING)
 df_keys.write.format('csv').mode("overwrite").options(header='false').save(delete_keys)
