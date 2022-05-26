@@ -8,6 +8,10 @@ from pyspark.sql import SparkSession, SQLContext
 from pyspark import SparkContext
 import pyspark.sql.functions as F
 
+
+arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -23,15 +27,16 @@ PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
 ENDPOINT_URL = cfg["s3"]["endpoint"]
-try:
-    SREBUILDD_URL  = cfg["srebuildd_url"]
-except KeyError:
-    # Backward compatibility
-    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
-SREBUILDD_ARCDATA_PATH  = cfg["srebuildd_arcdata_path"]
-SREBUILDD_URL = "%s/%s" % (SREBUILDD_URL, SREBUILDD_ARCDATA_PATH)
+SREBUILDD_PATH = cfg[ "srebuildd_arcdata_path" ]
 ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
+
+try:
+    SREBUILDD_URL = cfg["srebuildd_url"] + "/%s/" % SREBUILDD_PATH
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81/%s" % (cfg["srebuildd_ip"], SREBUILDD_PATH)
+
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -48,10 +53,6 @@ spark = SparkSession.builder \
      .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
      .config("spark.local.dir", PATH) \
      .getOrCreate()
-
-
-arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 
 
 def statkey(row):

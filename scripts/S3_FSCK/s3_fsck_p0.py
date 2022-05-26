@@ -10,6 +10,9 @@ import hashlib
 import base64
 import yaml
 
+
+arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+
 config_path = "%s/%s" % ( sys.path[0] ,"../config/config.yml")
 with open(config_path, 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
@@ -20,13 +23,6 @@ else:
     RING = cfg["ring"]
 
 PATH = cfg["path"]
-
-try:
-    SREBUILDD_URL  = cfg["srebuildd_url"]
-except KeyError:
-    # Backward compatibility
-    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
-SREBUILDD_ARC_PATH = cfg["srebuildd_arc_path"]
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
@@ -35,7 +31,16 @@ ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
-arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+try:
+    SREBUILDD_PATH = cfg["srebuildd_arc_path"]
+except KeyError:
+    SREBUILDD_PATH = cfg["srebuildd_path"]
+
+try:
+    SREBUILDD_URL = cfg["srebuildd_url"] + "/%s/" % SREBUILDD_PATH
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81/%s" % (cfg["srebuildd_ip"], SREBUILDD_PATH)
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
@@ -122,7 +127,7 @@ def sparse(f):
 
 
 def check_split(key):
-    url = "%s/%s/%s" % (SREBUILDD_URL, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+    url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
         split = r.headers.get("X-Scal-Attr-Is-Split", False)
@@ -137,7 +142,7 @@ def blob(row):
         try:
             header = {}
             header['x-scal-split-policy'] = "raw"
-            url = "%s/%s/%s" % (SREBUILDD_URL, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+            url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
             r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
                 chunks = ""

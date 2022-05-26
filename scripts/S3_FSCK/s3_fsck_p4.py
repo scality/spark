@@ -14,6 +14,8 @@ from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
 from scality.key import Key
 from scality.storelib.storeutils import uks_parse
 
+arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
 
 config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
@@ -29,13 +31,7 @@ USER = cfg["sup"]["login"]
 PASSWORD = cfg["sup"]["password"]
 URL = cfg["sup"]["url"]
 PATH = cfg["path"]
-try:
-    SREBUILDD_URL  = cfg["srebuildd_url"]
-except KeyError:
-    # Backward compatibility
-    SREBUILDD_URL = "http://%s:81" % cfg["srebuildd_ip"]
-SREBUILDD_PATH  = cfg["srebuildd_chord_path"]
-SREBUILDD_URL = "%s/%s" % (SREBUILDD_URL, SREBUILDD_PATH)
+
 PROTOCOL = cfg["protocol"]
 ACCESS_KEY = cfg["s3"]["access_key"]
 SECRET_KEY = cfg["s3"]["secret_key"]
@@ -43,8 +39,16 @@ ENDPOINT_URL = cfg["s3"]["endpoint"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 ARC = cfg["arc_protection"]
 
-arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
-arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+try:
+    SREBUILDD_PATH = cfg["srebuildd_chord_path"]
+except KeyError:
+    SREBUILDD_PATH = cfg["srebuildd_path"]
+
+try:
+    SREBUILDD_URL = cfg["srebuildd_url"] + "/%s/" % SREBUILDD_PATH
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81/%s" % (cfg["srebuildd_ip"], SREBUILDD_PATH)
 
 s = Supervisor(url=URL, login=USER, passwd=PASSWORD)
 listm = sorted(s.supervisorConfigDso(dsoname=RING)['nodes'])
@@ -139,7 +143,7 @@ def revlookupid(ringkey, nodelist, ring):
 def deletekey(row):
         key = row.ringkey
         try:
-                url = "%s/%s" % ( SREBUILDD_URL, str(key.zfill(40)) )
+                url = "%s/%s" % (SREBUILDD_URL, str(key.zfill(40)))
                 print(url)
                 r = requests.delete(url)
                 status_code = r.status_code

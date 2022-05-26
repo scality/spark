@@ -13,16 +13,23 @@ with open(config_path, 'r') as ymlfile:
 
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
 PROT = cfg["protocol"]
 
-srebuildd_ip  = cfg["srebuildd_ip"]
-srebuildd_path  = cfg["srebuildd_path"]
-srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
+try:
+    SREBUILDD_PATH = cfg["srebuildd_chord_path"]
+except KeyError:
+    SREBUILDD_PATH = cfg["srebuildd_path"]
+try:
+    SREBUILDD_URL = cfg["srebuildd_url"] + "/%s/" % SREBUILDD_PATH
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81/%s" % (cfg["srebuildd_ip"], SREBUILDD_PATH)
+
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 
 spark = SparkSession.builder \

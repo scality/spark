@@ -11,13 +11,21 @@ with open(config_path, 'r') as ymlfile:
 
 
 if len(sys.argv) >1:
-	RING = sys.argv[1]
+    RING = sys.argv[1]
 else:
-	RING = cfg["ring"]
+    RING = cfg["ring"]
 
 PATH = cfg["path"]
-srebuildd_ip  = cfg["srebuildd_ip"]
-srebuildd_url = "http://%s:81/rebuild/arcdata/" % srebuildd_ip
+try:
+    SREBUILDD_PATH = cfg["srebuildd_arcdata_path"]
+except KeyError:
+    SREBUILDD_PATH = cfg["srebuildd_path"]
+
+try:
+    SREBUILDD_URL = cfg["srebuildd_url"] + "/%s/" % SREBUILDD_PATH
+except KeyError:
+    # Backward compatibility
+    SREBUILDD_URL = "http://%s:81/%s" % (cfg["srebuildd_ip"], SREBUILDD_PATH)
 
 spark = SparkSession.builder \
      .appName("Check Orphans ring:"+RING) \
