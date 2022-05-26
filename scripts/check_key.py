@@ -21,7 +21,7 @@ PATH = cfg["path"]
 PROTOCOL = cfg["protocol"]
 
 srebuildd_ip  = cfg["srebuildd_ip"]
-srebuildd_path  = cfg["srebuildd_path"]
+srebuildd_path  = cfg["srebuildd_chord_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 

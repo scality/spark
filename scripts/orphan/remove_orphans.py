@@ -21,7 +21,7 @@ else:
 PATH = cfg["path"]
 PROTOCOL = cfg["protocol"]
 srebuildd_ip  = cfg["srebuildd_ip"]
-srebuildd_path  = cfg["srebuildd_path"]
+srebuildd_chord_path  = cfg["srebuildd_chord_path"]
 srebuildd_url = "http://%s:81/%s/" % ( srebuildd_ip, srebuildd_path)
 
 spark = SparkSession.builder \
