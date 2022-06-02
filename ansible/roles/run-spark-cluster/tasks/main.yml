@@ -38,6 +38,7 @@
   run_once: true
   tags:
     - run::configs
+    - run::config-sample
 
 - name: Copy start_spark.sh
   template:
