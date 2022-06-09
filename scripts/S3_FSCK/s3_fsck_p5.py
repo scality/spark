@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python2.7
 '''
 Read keys from stdin and tries to find them by running listKeys on their node.
 '''
@@ -12,6 +12,52 @@ from scality.supervisor import Supervisor
 from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
 from scality.common import ScalDaemonExceptionCommandError
 from scality.key import Key
+
+
+config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
+with open(config_path, "r") as ymlfile:
+    cfg = yaml.load(ymlfile)
+
+
+if len(sys.argv) >1:
+    RING = sys.argv[1]
+else:
+    RING = cfg["ring"]
+
+USER = cfg["sup"]["login"]
+PASSWORD = cfg["sup"]["password"]
+URL = cfg["sup"]["url"]
+PATH = cfg["path"]
+SREBUILDD_IP  = cfg["srebuildd_ip"]
+SREBUILDD_PATH  = cfg["srebuildd_chord_path"]
+SREBUILDD_URL = "http://%s:81/%s" % (SREBUILDD_IP, SREBUILDD_PATH)
+PROTOCOL = cfg["protocol"]
+ACCESS_KEY = cfg["s3"]["access_key"]
+SECRET_KEY = cfg["s3"]["secret_key"]
+ENDPOINT_URL = cfg["s3"]["endpoint"]
+PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
+ARC = cfg["arc_protection"]
+
+arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
+arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
+spark = SparkSession.builder \
+     .appName("s3_fsck_p4.py:Clean the extra keys :" + RING) \
+     .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")\
+     .config("spark.hadoop.fs.s3a.access.key", ACCESS_KEY)\
+     .config("spark.hadoop.fs.s3a.secret.key", SECRET_KEY)\
+     .config("spark.hadoop.fs.s3a.endpoint", ENDPOINT_URL) \
+     .config("spark.executor.instances", cfg["spark.executor.instances"]) \
+     .config("spark.executor.memory", cfg["spark.executor.memory"]) \
+     .config("spark.executor.cores", cfg["spark.executor.cores"]) \
+     .config("spark.driver.memory", cfg["spark.driver.memory"]) \
+     .config("spark.memory.offHeap.enabled", cfg["spark.memory.offHeap.enabled"]) \
+     .config("spark.memory.offHeap.size", cfg["spark.memory.offHeap.size"]) \
+     .config("spark.local.dir", PATH) \
+     .getOrCreate()
+
+files = "%s://%s/%s/s3fsck/recover.csv" % (PROTOCOL, PATH, RING)
 
 def usage(output):
     output.write("""Usage: %s [options]
@@ -58,7 +104,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     if not sup:
-	sup = 'http://127.0.0.1:5580'
+    sup = 'http://10.9.31.198:5580'
 
 
     s = Supervisor(url=sup,login=login,passwd=password)
@@ -68,79 +114,42 @@ if __name__ == "__main__":
     arck = None
 
     for n in s.supervisorConfigDso(dsoname=ring)['nodes']:
-	nid = '%s:%s' % (n['ip'], n['chordport'])
-	nodes[nid] = DaemonFactory().get_daemon("node", login=login, passwd=password, url='https://{0}:{1}'.format(n['ip'], n['adminport']), chord_addr=n['ip'], chord_port=n['chordport'], dso=ring)
-	if not node: node = nodes[nid]
+    nid = '%s:%s' % (n['ip'], n['chordport'])
+    nodes[nid] = DaemonFactory().get_daemon("node", login=login, passwd=password, url='https://{0}:{1}'.format(n['ip'], n['adminport']), chord_addr=n['ip'], chord_port=n['chordport'], dso=ring)
+    if not node: node = nodes[nid]
 
-    print "Key to Analyse:", key.getHexPadded()
-    v = subprocess.Popen('scalarcdig -b '+nid+' '+key.getHexPadded() , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in v.stdout.readlines():
-	if "objkey"  in line:
-		try:
-			sarc = Key(line[8:])
-		except Exception as e:
-			print "RINGFAIURE" , e
-			break
-		key_list = [ sarc ] + [ x for x in sarc.getReplicas() ]
-	        for arck in key_list :
-			check = nodes[node.findSuccessor(arck.getHexPadded())["address"]]
-			tab  = check.checkLocal(arck.getHexPadded())
-			print  "%s;%s;%s" % ( key.getHexPadded() , arck.getHexPadded() , tab )
-			if tab["deleted"] == True:
-				print "Undelete Key " , arck.getHexPadded()
-				version = int(tab["version"]+64)
-				try:
-				    check.chunkapiStoreOp(op="undelete", key=arck.getHexPadded(), extra_params={"version": version})
-				except ScalFactoryExceptionTypeNotFound as e:
-				     print "Error %s " , e
-			if tab["status"] == "exist":
-				key_to_get = arck.getHexPadded()
+    def undeletekey(row):
+        key = row.ringkey
+        print "Key to Analyse:", key.getHexPadded()
+        v = subprocess.Popen('scalarcdig -b '+nid+' '+key.getHexPadded() , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in v.stdout.readlines():
+        if "objkey"  in line:
+            try:
+                sarc = Key(line[8:])
+            except Exception as e:
+                print "RINGFAILURE" , e
+                break
+            key_list = [ sarc ] + [ x for x in sarc.getReplicas() ]
+                for arck in key_list :
+                check = nodes[node.findSuccessor(arck.getHexPadded())["address"]]
+                tab  = check.checkLocal(arck.getHexPadded())
+                print  "%s;%s;%s" % ( key.getHexPadded() , arck.getHexPadded() , tab )
+                if tab["deleted"] == True:
+                    print "Undelete Key " , arck.getHexPadded()
+                    version = int(tab["version"]+64)
+                    try:
+                        check.chunkapiStoreOp(op="undelete", key=arck.getHexPadded(), extra_params={"version": version})
+                    except ScalFactoryExceptionTypeNotFound as e:
+                         print "Error %s " , e
 
-
-    try:
-	    f = open ("/tmp/"+str(key_to_get),"w+")
-    except IOError as e:
-		print e
-    try:
-	    check = nodes[node.findSuccessor(key_to_get)["address"]]
-	    check.getLocal(key_to_get, f)
-	    f.close()
-
-    except ScalDaemonExceptionCommandError as e:
-	    print "GetLocal Error %s " , e
-	    sys.exit(0 if success else 1)
-
-
-    p = subprocess.Popen('scalsplitparseindex -f /tmp/'+str(key_to_get), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in p.stdout.readlines():
-		    try:
-			    keyline = Key(line)
-		    except ValueError as e :
-			    if "LSPLIT" in e:
-				    print e
-				    sys.exit(0 if success else 1)
-		    v = subprocess.Popen('scalarcdig -b '+nid+' '+line , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		    for line in v.stdout.readlines():
-			    if "objkey"  in line:
-				try:
-					sarcs = Key(line[8:])
-				except ValueError as e :
-					print "SCALRING FAILURE" , e
-					break
-				key_list = [ sarcs ] + [ x for x in sarcs.getReplicas() ]
-				for arcs in key_list :
-					check = nodes[node.findSuccessor(arcs.getHexPadded())["address"]]
-					tab = check.checkLocal(arcs.getHexPadded())
-					print  "%s;%s;%s" % ( keyline.getHexPadded() , arcs.getHexPadded() , tab )
-					if tab["deleted"] == True:
-						print "Undelete Key " , arcs.getHexPadded()
-						version = int(tab["version"]+64)
-						try:
-						    check.chunkapiStoreOp(op="undelete", key=arcs.getHexPadded(), extra_params={"version": version})
-						except ScalFactoryExceptionTypeNotFound as e:
-						     print "Error %s " , e
-			    retval2 = v.wait()
-    retval = p.wait()
-    os.remove("/tmp/"+str(key_to_get))
+    df = spark.read.format("csv").option("header",
+                                         "false").option("inferSchema",
+                                                         "true").load(files)
+    df = df.withColumnRenamed("_c0", "ringkey")
+    df = df.repartition(PARTITIONS)
+    rdd = df.rdd.map(undeletekey).toDF()
+    recoveredorphans = "%s://%s/%s/s3fsck/recovered-ring-keys.csv" % (
+    PROTOCOL, PATH, RING)
+    rdd.write.format("csv").mode("overwrite").options(header="false").save(recoveredorphans)
 
     sys.exit(0 if success else 1)
