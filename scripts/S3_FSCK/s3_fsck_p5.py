@@ -123,24 +123,25 @@ if __name__ == "__main__":
         print "Key to Analyse:", key.getHexPadded()
         v = subprocess.Popen('scalarcdig -b '+nid+' '+key.getHexPadded() , shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in v.stdout.readlines():
-        if "objkey"  in line:
-            try:
-                sarc = Key(line[8:])
-            except Exception as e:
-                print "RINGFAILURE" , e
-                break
-            key_list = [ sarc ] + [ x for x in sarc.getReplicas() ]
+            if "objkey"  in line:
+                try:
+                    sarc = Key(line[8:])
+                except Exception as e:
+                    print "RINGFAILURE" , e
+                    break
+                key_list = [ sarc ] + [ x for x in sarc.getReplicas() ]
                 for arck in key_list :
-                check = nodes[node.findSuccessor(arck.getHexPadded())["address"]]
-                tab  = check.checkLocal(arck.getHexPadded())
-                print  "%s;%s;%s" % ( key.getHexPadded() , arck.getHexPadded() , tab )
-                if tab["deleted"] == True:
-                    print "Undelete Key " , arck.getHexPadded()
-                    version = int(tab["version"]+64)
-                    try:
-                        check.chunkapiStoreOp(op="undelete", key=arck.getHexPadded(), extra_params={"version": version})
-                    except ScalFactoryExceptionTypeNotFound as e:
-                         print "Error %s " , e
+                    check = nodes[node.findSuccessor(arck.getHexPadded())["address"]]
+                    tab  = check.checkLocal(arck.getHexPadded())
+                    print  "%s;%s;%s" % ( key.getHexPadded() , arck.getHexPadded() , tab )
+                    if tab["deleted"] == True:
+                        print "Undelete Key " , arck.getHexPadded()
+                        version = int(tab["version"]+64)
+                        try:
+                            check.chunkapiStoreOp(op="undelete", key=arck.getHexPadded(), extra_params={"version": version})
+                            return "%s;$s" % ("OK", key)
+                        except ScalFactoryExceptionTypeNotFound as e:
+                            return "%s;%s" % (e, key)
 
     df = spark.read.format("csv").option("header",
                                          "false").option("inferSchema",
