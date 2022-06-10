@@ -5,7 +5,6 @@ Read keys from stdin and tries to find them by running listKeys on their node.
 
 import sys, os, getopt , re
 
-sys.path.insert(0,'scality')
 import subprocess
 
 import yaml
@@ -40,6 +39,18 @@ ARC = cfg["arc_protection"]
 
 arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 arcdatakeypattern = re.compile(r'[0-9a-fA-F]{38}70')
+
+if len(sys.argv) > 1:
+    RING = sys.argv[ 1 ]
+else:
+    RING = cfg[ "ring" ]
+sup = 'http://10.9.31.198:5580'
+
+if not RING:
+    usage(sys.stderr)
+    sys.exit(2)
+
+    files = "%s://%s/%s/s3fsck/recover.csv" % (PROTOCOL, PATH, RING)
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
 spark = SparkSession.builder \
@@ -79,17 +90,6 @@ if __name__ == "__main__":
         usage(sys.stderr)
         sys.exit(2)
 
-    if len(sys.argv) > 1:
-        RING = sys.argv[ 1 ]
-    else:
-        RING = cfg[ "ring" ]
-    sup = 'http://10.9.31.198:5580'
-
-    if not RING:
-        usage(sys.stderr)
-        sys.exit(2)
-
-    files = "%s://%s/%s/s3fsck/recover.csv" % (PROTOCOL, PATH, RING)
 
     s = Supervisor(url=sup,login=USER,passwd=PASSWORD)
     nodes = {}
