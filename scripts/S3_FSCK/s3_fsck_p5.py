@@ -127,6 +127,8 @@ if __name__ == "__main__":
                             return "%s;$s" % ("OK", key)
                         except ScalFactoryExceptionTypeNotFound as e:
                             return "%s;%s" % (e, key)
+                    else:
+                        return "%s;%s" % ("NOT_DELETED", key)
 
     df = spark.read.format("csv").option("header",
                                          "false").option("inferSchema",
@@ -134,8 +136,7 @@ if __name__ == "__main__":
     df = df.withColumnRenamed("_c0", "ringkey")
     df = df.repartition(PARTITIONS)
     rdd = df.rdd.map(undeletekey).toDF()
-    recoveredorphans = "%s://%s/%s/s3fsck/recovered-ring-keys.csv" % (
-    PROTOCOL, PATH, RING)
+    recoveredorphans = "%s://%s/%s/s3fsck/recovered-ring-keys.csv" % (PROTOCOL, PATH, RING)
     rdd.write.format("csv").mode("overwrite").options(header="false").save(recoveredorphans)
 
     sys.exit(0 if success else 1)
