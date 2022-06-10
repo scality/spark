@@ -8,21 +8,21 @@ import sys, os, getopt , re
 sys.path.insert(0,'scality')
 import subprocess
 
+import yaml
 from scality.supervisor import Supervisor
 from scality.daemon import DaemonFactory , ScalFactoryExceptionTypeNotFound
-from scality.common import ScalDaemonExceptionCommandError
 from scality.key import Key
+from scality.common import ScalDaemonExceptionCommandError
+from scality.storelib.storeutils import uks_parse
+
+from pyspark.sql import SparkSession, SQLContext
+from pyspark import SparkContext
 
 
 config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
-
-if len(sys.argv) >1:
-    RING = sys.argv[1]
-else:
-    RING = cfg["ring"]
 
 USER = cfg["sup"]["login"]
 PASSWORD = cfg["sup"]["password"]
@@ -57,7 +57,6 @@ spark = SparkSession.builder \
      .config("spark.local.dir", PATH) \
      .getOrCreate()
 
-files = "%s://%s/%s/s3fsck/recover.csv" % (PROTOCOL, PATH, RING)
 
 def usage(output):
     output.write("""Usage: %s [options]
@@ -80,43 +79,29 @@ if __name__ == "__main__":
         usage(sys.stderr)
         sys.exit(2)
 
-    ring = None
-    sup = None
-    key = None
-    login = "root"
-    password = "admin"
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage(sys.stdout)
-            sys.exit(0)
-        elif o in ("-r", "--ring"):
-            ring = a
-        elif o in ("-s", "--supurl"):
-            sup = a
-        elif o in ("-k", "--key"):
-            key = Key(a)
-        else:
-            usage(sys.stderr)
-            sys.exit(2)
+    if len(sys.argv) > 1:
+        RING = sys.argv[ 1 ]
+    else:
+        RING = cfg[ "ring" ]
+    sup = 'http://10.9.31.198:5580'
 
-    if not ring:
+    if not RING:
         usage(sys.stderr)
         sys.exit(2)
 
-    if not sup:
-    sup = 'http://10.9.31.198:5580'
+    files = "%s://%s/%s/s3fsck/recover.csv" % (PROTOCOL, PATH, RING)
 
-
-    s = Supervisor(url=sup,login=login,passwd=password)
+    s = Supervisor(url=sup,login=USER,passwd=PASSWORD)
     nodes = {}
     success = True
-    node =  None
+    node = None
     arck = None
 
-    for n in s.supervisorConfigDso(dsoname=ring)['nodes']:
-    nid = '%s:%s' % (n['ip'], n['chordport'])
-    nodes[nid] = DaemonFactory().get_daemon("node", login=login, passwd=password, url='https://{0}:{1}'.format(n['ip'], n['adminport']), chord_addr=n['ip'], chord_port=n['chordport'], dso=ring)
-    if not node: node = nodes[nid]
+    for n in s.supervisorConfigDso(dsoname=RING)['nodes']:
+        nid = '%s:%s' % (n['ip'], n['chordport'])
+        nodes[nid] = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(n[ 'ip' ], n[ 'adminport' ]), chord_addr=n[ 'ip' ], chord_port=n[ 'chordport' ], dso=RING)
+        if not node:
+            node = nodes[nid]
 
     def undeletekey(row):
         key = row.ringkey
