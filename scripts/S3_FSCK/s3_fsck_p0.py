@@ -145,6 +145,7 @@ def blob(row):
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
                     rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
+                rtlst.append({"key": key, "index": key, "digkey": gen_md5_from_id(key)[:26]})
                 return rtlst
             else:
                 return [{"key":key, "subkey":"NOK", "digkey":"NOK"}]
