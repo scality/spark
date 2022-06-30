@@ -11,10 +11,11 @@ config_path = "%s/%s" % ( sys.path[0], "../config/config.yml")
 with open(config_path, "r") as ymlfile:
     cfg = yaml.load(ymlfile)
 
-if len(sys.argv) >1:
+if len(sys.argv) > 1:
     RING = sys.argv[1]
 else:
     RING = cfg["ring"]
+
 
 PATH = cfg["path"]
 PROTOCOL = cfg["protocol"]
