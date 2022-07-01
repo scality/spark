@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# DEFINE SOME DEFAULT VARAIBLES
+# DEFINE SOME DEFAULT VARAIBLES AND ASSOCIATIVE ARRAYS
 count_types=('listkeys.csv' 's3-bucketd' 's3-dig-keys.csv' 'arc-keys.csv')
 declare -A type_by_dir
 type_by_dir[listkeys.csv]='count_listkeys'
