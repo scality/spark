@@ -6,6 +6,7 @@ Read keys from stdin and tries to find them by running listKeys on their node.
 import sys, os, getopt , re
 
 import subprocess
+import psutil
 
 import yaml
 from scality.supervisor import Supervisor
@@ -66,15 +67,20 @@ arck = None
 
 
 def undeletekey(row):
-    nodeIP = "178.33.63.238"
+    for connection in connections:
+      if connection[5] == 'LISTEN':
+        local = connection[3]
+        if local[1] == 4244:
+          nodeIP = local[0]
+
     ret = False
     key = Key(row.ringkey)
     sarc = [ key ] + [ k for k in key.getReplicas() ]
     print(sarc)
+    localnode = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(nodeIP, "6444"), chord_addr=nodeIP, chord_port="4244", dso=RING)
     for arck in sarc:
         print("UNDELETE", arck.getHexPadded())
-        node = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(nodeIP, "6444"), chord_addr=nodeIP, chord_port="4244", dso=RING)
-        p = node.findSuccessor(arck.getHexPadded())[ "address" ].split(":")
+        p = localnode.findSuccessor(arck.getHexPadded())[ "address" ].split(":")
         node = DaemonFactory().get_daemon("node", login=USER, passwd=PASSWORD, url='https://{0}:{1}'.format(
             p[ 0 ], str(int(p[ 1 ]) + 2200)), chord_addr=p[ 0 ], chord_port=p[
             1 ], dso=RING)
