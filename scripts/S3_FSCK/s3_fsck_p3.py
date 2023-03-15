@@ -3,12 +3,12 @@ import os
 import re
 import sys
 import yaml
-from pyspark.sql import SparkSession
 import requests
+from pyspark.sql import SparkSession
 
 CONFIG_PATH = f"{sys.path[0]}/../config/config.yml"
 with open(CONFIG_PATH, "r", encoding=yaml.SafeLoader) as ymlfile:
-    CFG = yaml.load(ymlfile)
+    CFG = yaml.load(ymlfile, Loader=yaml.SafeLoader)
 
 
 RING = sys.argv[1] if len(sys.argv) > 1 else CFG["ring"]

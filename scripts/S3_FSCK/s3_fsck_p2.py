@@ -1,9 +1,9 @@
 """Docstring"""
 import os
 import sys
+import yaml
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
-import yaml
 
 CONFIG_PATH = f"{sys.path[0]}/../config/config.yml"
 with open(CONFIG_PATH, "r", encoding="utf-8") as ymlfile:

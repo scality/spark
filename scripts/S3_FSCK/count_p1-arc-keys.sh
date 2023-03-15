@@ -1,7 +1,9 @@
 #!/bin/bash
 
 TOTAL=0
-NUM_HEADERS=$(ls part* | wc -l)
-LINES=$(cat part* | wc -l)
-let TOTAL+=${LINES}-${NUM_HEADERS}
-echo "$TOTAL arc keys parsed from arc-keys.csv"
+FILE_LIST=$(find ./ -iname -type f 'part*')
+NUM_HEADERS=$(echo "${FILE_LIST}" | wc -l)
+# shellcheck disable=SC2086,SC2312
+LINES=$(cat ${FILE_LIST} | wc -l )
+(( TOTAL+=LINES+NUM_HEADERS ))
+echo "${TOTAL} arc keys parsed from arc-keys.csv"
