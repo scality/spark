@@ -104,12 +104,18 @@ ansible-playbook -i inventory --tags deploy -e "REGISTRY_USER=User_Name" -e "REG
 
 ### Using the Ansible playbook 
 
-Requirements:
+Instead of building the container to create the offline archive the playbook
+could be used directly if all requirements are met.
+
+#### Requirements
+
 * Ansible 2.9 (built and tested against)
 * Ansible Galaxy community.general collection
 * A host in the ``[staging]`` group with internet access
 * SSH Agent/Keys which provide access to the Scality GitHub repository
 * Defining the registry.scality.com credentials in inventory or command line
+
+#### Steps
 
 When registry_user and registry_password (lowercase) Ansible variables are 
 defined in the inventory file: 
@@ -145,19 +151,14 @@ Using this method currently requires Podman as the Docker runtime currently does
 not provide the ``keep-id`` User Namespace required to properly pass along SSH
 Agent and/or Keys to the container.
 
-1. Pulling the spark-deployment image from registry
-   ```commandline
-   [docker|podman] pull registry.scality.com/spark/spark-deployment:latest
-   ```
-
-2. Build the spark-deployment image
+1. Build the spark-deployment image
 
    ```commandline
    cd spark/ansible
-   [docker|podman] build . -f Containerfile -t registry.scality.com/spark/spark-deployment:latest
+   [docker|podman] build . -f ./ansible/Containerfile -t localhost/spark-deployment:latest
    ```
 
-3. Using Podman generate the offline archive 
+2. Using Podman generate the offline archive
 ```commandline
 podman run --privileged \
   --rm \
@@ -170,7 +171,7 @@ podman run --privileged \
   -e "REGISTRY_USER=User_Name" \
   -e "REGISTRY_PASSWORD=<CLI/API_KEY>" \
   -v ~/.ssh:/ansible/.ssh:rw \
-  registry.scality.com/spark/spark-deployment:latest \
+  localhost/spark-deployment:latest \
   stage
 ```
 

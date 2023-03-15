@@ -1,14 +1,21 @@
 #!/bin/bash
 
 RID=$1
-export WORKDIR=/var/tmp/bucketSproxydKeys
 
-if ! [ -d "${WORKDIR}" ]
+if [[ -z "${RID}" ]]
 then
-    mkdir -pv ${WORKDIR}
+    echo "Usage: $0 <raft session id>"
+    exit 1
 fi
 
-for bucket in $(curl --silent http://localhost:9000/_/raft_sessions/${RID}/bucket | jq -r '.[] | select (. | contains("mpuShadowBucket") | not) | select (. | contains("users..bucket") | not)')
+export WORKDIR=/var/tmp/bucketSproxydKeys
+
+if ! [[ -d "${WORKDIR}" ]]
+then
+    mkdir -pv "${WORKDIR}"
+fi
+curl --silent -o bucket_list.txt http://localhost:9000/_/raft_sessions/"${RID}"/bucket
+for bucket in $(jq -r '.[] | select (. | contains("mpuShadowBucket") | not) | select (. | contains("users..bucket") | not)' bucket_list.txt)
 
 do
     echo "--- Starting on ${bucket} ---"
@@ -23,10 +30,10 @@ do
         -e 'VERBOSE=1' \
         registry.scality.com/s3utils/s3utils:1.12.5 \
         verifyBucketSproxydKeys.js  \
-        > ${WORKDIR}/raw_${bucket}_keys.txt
+        > "${WORKDIR}/raw_${bucket}"_keys.txt
 
     echo "--- Processing output... ---"
-    jq -r '. | select(.message | contains("sproxyd key"))  + {"bucket": .objectUrl  } | .bucket |= sub("s3://(?<bname>.*)/.*"; .bname) | .objectUrl |= sub("s3://.*/(?<oname>.*)$"; .oname) | [.bucket, .objectUrl, .sproxydKey] | @csv' ${WORKDIR}/raw_${bucket}_keys.txt > ${WORKDIR}/${bucket}_keys.txt
-    rm -f ${WORKDIR}/raw_${bucket}_keys.txt
+    jq -r '. | select(.message | contains("sproxyd key"))  + {"bucket": .objectUrl  } | .bucket |= sub("s3://(?<bname>.*)/.*"; .bname) | .objectUrl |= sub("s3://.*/(?<oname>.*)$"; .oname) | [.bucket, .objectUrl, .sproxydKey] | @csv' "${WORKDIR}/raw_${bucket}"_keys.txt > "${WORKDIR}/${bucket}"_keys.txt
+    rm -f "${WORKDIR}/raw_${bucket}"_keys.txt
     echo
 done

@@ -1,14 +1,15 @@
+# Execute from parent directory as docker build . -f ansible/Containerfile -t ansible
 FROM alpine:latest
 
 RUN apk --no-cache add ansible openssh-client bash
 RUN mkdir /ansible/
-COPY roles /ansible/roles
-COPY collections /ansible/collections
-COPY action_plugins /ansible/action_plugins
-COPY ansible.cfg /ansible/
-COPY inventory.sample /ansible/
-COPY run.yml /ansible/
+COPY ansible/roles /ansible/roles
+COPY ansible/collections /ansible/collections
+COPY ansible/action_plugins /ansible/action_plugins
+COPY ansible/ansible.cfg /ansible/
+COPY ansible/inventory.sample /ansible/
+COPY ansible/run.yml /ansible/
 RUN chmod -R g+rw,o+rw /ansible/
 WORKDIR /ansible/
-COPY entrypoint.sh /
+COPY ansible/entrypoint.sh /
 ENTRYPOINT /entrypoint.sh
