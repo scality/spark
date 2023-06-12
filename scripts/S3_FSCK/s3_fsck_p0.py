@@ -124,35 +124,44 @@ def check_split(key):
         split = r.headers.get("X-Scal-Attr-Is-Split", False)
         return split
     else:
-        return ("HTTP_NOK")
+        return "HTTP_NOK"
+
 
 def blob(row):
     key = row._c2
     split = check_split(key)
-    if split:
+    if split and isinstance(split, str) and split == "HTTP_NOK":
+        return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
+    if isinstance(split, bool) and split:
         try:
             header = {}
-            header['x-scal-split-policy'] = "raw"
-            url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
+            header["x-scal-split-policy"] = "raw"
+            url = "http://%s:81/%s/%s" % (
+                SREBUILDD_IP,
+                SREBUILDD_ARC_PATH,
+                str(key.zfill(40)),
+            )
             r = requests.get(url, headers=header, stream=True)
             if r.status_code == 200:
                 chunks = ""
                 for chunk in r.iter_content(chunk_size=1024000000):
                     if chunk:
-                        chunks = chunk+chunk
+                        chunks = chunk + chunk
 
-                chunkshex = chunks.encode('hex')
+                chunkshex = chunks.encode("hex")
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
-                    rtlst.append({"key":key, "subkey":k, "digkey":gen_md5_from_id(k)[:26]})
+                    rtlst.append(
+                        {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
+                    )
                 return rtlst
             else:
-                return [{"key":key, "subkey":"NOK", "digkey":"NOK"}]
+                return [{"key": key, "subkey": "NOK", "digkey": "NOK"}]
 
         except requests.exceptions.ConnectionError as e:
-            return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
-    elif split == False:
-        return [{"key":key, "subkey":"SINGLE", "digkey":gen_md5_from_id(key)[:26]}]
+            return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
+    elif isinstance(split, bool) and not split:
+        return [{"key": key, "subkey": "SINGLE", "digkey": gen_md5_from_id(key)[:26]}]
 
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
