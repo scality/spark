@@ -18,17 +18,22 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Make staging and temp directories
+        run: |
+          mkdir -pv ./var/tmp/{spark,staging}
       - name: Checkout the Spark repository into the staging directory
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.tag }}
-          path: /var/tmp/spark
+          path: ./var/tmp/spark
       - name: Create Variables
         run: |
           export image_path=spark-dev/deployment
           echo "image_path=${image_path}" >> $GITHUB_OUTPUT
-          export staging_path=/var/tmp/staging/
+          export staging_path=./var/tmp/staging/
           echo "staging_path=${staging_path}" >> $GITHUB_OUTPUT
+          export temp_path=./var/tmp/spark/
+          echo "temp_path=${temp_path}" >> $GITHUB_OUTPUT
           export staging_archive=spark-offline-archive.run
           echo "staging_archive=${staging_archive}" >> $GITHUB_OUTPUT
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
@@ -40,16 +45,13 @@ jobs:
           registry: registry.scality.com
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Remove staging directory and old content
-        run: |
-          rm -rf /var/tmp/staging
       - name: Ensure makeself is installed
         run: |
           sudo apt-get update
           sudo apt-get install -y makeself
       - name: Create Archive from Spark
         run: |
-          cd /var/tmp/spark
+          cd ${{ env.temp_path }}
           git archive --output=${{ env.staging_path }}spark-offline-archive.tar --format-tar HEAD
       - name: Pull containers from ${{ env.registry }}
         run: |
@@ -65,7 +67,7 @@ jobs:
           docker save -o ${{ env.staging_path }}spark/nginx.tar docker.io/library/nginx:1.21.6-alpine
       - name: Copy the setup script into the staging directory
         run: |
-          cp /var/tmp/spark/scripts/offline-archive-setup.sh ${{ env.staging_path }}
+          cp ${{ env.temp_path }}scripts/offline-archive-setup.sh ${{ env.staging_path }}
       - name: Create self extracting archive (SFX)
         run: |
           cd ${{ env.staging_path }}
@@ -73,15 +75,15 @@ jobs:
             --nocomp \
             --notemp \
             ${{ env.staging_path }} \
-            /var/tmp/${{ env.staging_archive }} \
+            ./var/tmp/${{ env.staging_archive }} \
             "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" \
             ./setup.sh
       - name: Examine self extracting archive (SFX)
         run: |
-          ls -l /var/tmp/${{ env.staging_archive }}
+          ls -l ./var/tmp/${{ env.staging_archive }}
       - name: Cleanup staging temp files
         run: |
-          rm -rf ${{ env.staging_path }} ${{ env.staging_path }}../spark
+          rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         env:
@@ -92,4 +94,4 @@ jobs:
           generate_release_notes: false
           target_commitish: ${{ github.sha }}
           prerelease: ${{ inputs.prerelease }}
-          files: /var/tmp/${{ env.staging_archive }}
+          files: ./var/tmp/${{ env.staging_archive }}
