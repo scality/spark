@@ -52,7 +52,7 @@ jobs:
       - name: Create Archive from Spark
         run: |
           cd ${{ env.temp_path }}
-          git archive --output=${{ env.staging_path }}spark-offline-archive.tar --format-tar HEAD
+          git archive --output=${{ env.staging_path }}spark-offline-archive.tar --format=tar HEAD
       - name: Pull containers from ${{ env.registry }}
         run: |
           docker pull ${{ env.registry }}/spark/spark-master:latest
