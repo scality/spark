@@ -18,10 +18,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout git tag
+      - name: Checkout the Spark repository into the staging directory
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.tag }}
+          path: /var/tmp/spark
       - name: Create Variables
         run: |
           export image_path=spark-dev/deployment
@@ -44,13 +45,8 @@ jobs:
           rm -rf /var/tmp/staging
       - name: Ensure makeself is installed
         run: |
-          apt-get update
-          apt install makeself
-      - name: Checkout the Spark repository into the staging directory
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.tag }}
-          path: /var/tmp/spark
+          sudo apt-get update
+          sudo apt-get install -y makeself
       - name: Create Archive from Spark
         run: |
           cd /var/tmp/spark
