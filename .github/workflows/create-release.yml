@@ -29,15 +29,15 @@ jobs:
       - name: Create Variables
         run: |
           export image_path=spark-dev/deployment
-          echo "image_path=${image_path}" >> $GITHUB_OUTPUT
+          echo "image_path=${image_path}" >> $GITHUB_ENV 
           export staging_path=./var/tmp/staging/
-          echo "staging_path=${staging_path}" >> $GITHUB_OUTPUT
+          echo "staging_path=${staging_path}" >> $GITHUB_ENV
           export temp_path=./var/tmp/spark/
-          echo "temp_path=${temp_path}" >> $GITHUB_OUTPUT
+          echo "temp_path=${temp_path}" >> $GITHUB_ENV
           export staging_archive=spark-offline-archive.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_OUTPUT
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+          echo "registry=registry.scality.com" >> $GITHUB_ENV
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
-          echo "registry=registry.scality.com" >> $GITHUB_OUTPUT
           echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
       - name: Registry Login
         uses: docker/login-action@v2.1.0
