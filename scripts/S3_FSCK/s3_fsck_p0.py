@@ -121,33 +121,29 @@ def check_split(key):
     url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
-        split = r.headers.get("X-Scal-Attr-Is-Split", False)
-        return split
-    else:
-        return "HTTP_NOK"
+        return {"result": True, "is_split": r.headers.get("X-Scal-Attr-Is-Split", False)}
+    return {"result": False, "is_split": None}
 
 
 def blob(row):
     key = row._c2
     split = check_split(key)
-    if split and isinstance(split, str) and split == "HTTP_NOK":
-        return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
-    if isinstance(split, bool) and split:
+    if not split['result']:
+        return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
+    if split['is_split']:
         try:
-            header = {}
-            header["x-scal-split-policy"] = "raw"
+            header = { "x-scal-split-policy": "raw" }
             url = "http://%s:81/%s/%s" % (
                 SREBUILDD_IP,
                 SREBUILDD_ARC_PATH,
                 str(key.zfill(40)),
             )
-            r = requests.get(url, headers=header, stream=True)
-            if r.status_code == 200:
+            response = requests.get(url, headers=header, stream=True)
+            if response.status_code == 200:
                 chunks = ""
-                for chunk in r.iter_content(chunk_size=1024000000):
+                for chunk in response.iter_content(chunk_size=1024000000):
                     if chunk:
                         chunks = chunk + chunk
-
                 chunkshex = chunks.encode("hex")
                 rtlst = []
                 for k in list(set(sparse(chunkshex))):
@@ -155,14 +151,11 @@ def blob(row):
                         {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
                     )
                 return rtlst
-            else:
-                return [{"key": key, "subkey": "NOK", "digkey": "NOK"}]
-
+            return [{"key": key, "subkey": "NOK", "digkey": "NOK"}]
         except requests.exceptions.ConnectionError as e:
             return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
-    elif isinstance(split, bool) and not split:
+    if not split['is_split']:
         return [{"key": key, "subkey": "SINGLE", "digkey": gen_md5_from_id(key)[:26]}]
-
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
