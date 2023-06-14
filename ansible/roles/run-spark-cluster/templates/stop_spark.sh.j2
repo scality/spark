@@ -1,6 +1,6 @@
 #!/bin/bash
 
-{%- if inventory_hostname in groups['sparkmaster'] %}
+{% if inventory_hostname in groups['sparkmaster'] %}
 docker stop spark-master
 {% endif %}
 
