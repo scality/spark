@@ -1,4 +1,4 @@
-name: Create Release
+name: Create Offline Installer
 
 on:
   workflow_dispatch:
@@ -68,6 +68,7 @@ jobs:
       - name: Copy the setup script into the staging directory
         run: |
           cp ${{ env.temp_path }}/scripts/offline-archive-setup.sh ${{ env.staging_path }}/setup.sh
+          chmod +x ${{ env.staging_path }}/setup.sh
       - name: Create self extracting archive (SFX)
         run: |
           cd ${{ env.staging_path }}
@@ -84,14 +85,3 @@ jobs:
       - name: Cleanup staging temp files
         run: |
           rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: Release ${{ inputs.tag }}
-          tag_name: ${{ inputs.tag }}
-          generate_release_notes: false
-          target_commitish: ${{ github.sha }}
-          prerelease: ${{ inputs.prerelease }}
-          files: ${{ env.temp_path }}/../${{ env.staging_archive }}
