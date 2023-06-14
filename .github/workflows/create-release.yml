@@ -22,9 +22,9 @@ jobs:
         run: |
           export image_path=spark-dev/deployment
           echo "image_path=${image_path}" >> $GITHUB_ENV 
-          export staging_path=${HOME}/var/tmp/staging
+          export staging_path=/home/runner/work/spark/spark/var/tmp/staging
           echo "staging_path=${staging_path}" >> $GITHUB_ENV
-          export temp_path=${HOME}/var/tmp/spark
+          export temp_path=/home/runner/work/spark/spark/var/tmp/spark
           echo "temp_path=${temp_path}" >> $GITHUB_ENV
           export staging_archive=spark-offline-archive.run
           echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
@@ -80,7 +80,7 @@ jobs:
             ./setup.sh
       - name: Examine self extracting archive (SFX)
         run: |
-          ls -l ./var/tmp/${{ env.staging_archive }}
+          ls -l ${{ env.temp_path }}/../${{ env.staging_archive }}
       - name: Cleanup staging temp files
         run: |
           rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
@@ -94,4 +94,4 @@ jobs:
           generate_release_notes: false
           target_commitish: ${{ github.sha }}
           prerelease: ${{ inputs.prerelease }}
-          files: ./var/tmp/${{ env.staging_archive }}
+          files: ${{ env.temp_path }}/../${{ env.staging_archive }}
