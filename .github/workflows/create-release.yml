@@ -18,43 +18,41 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout git tag
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.tag }}
       - name: Create Variables
         run: |
           export image_path=spark-dev/deployment
-          echo "image_path=${image_path}" >> $GITHUB_OUTPUT
-          export staging_path=/var/tmp/staging/
-          echo "staging_path=${staging_path}" >> $GITHUB_OUTPUT
+          echo "image_path=${image_path}" >> $GITHUB_ENV 
+          export staging_path=/home/runner/work/spark/spark/var/tmp/staging
+          echo "staging_path=${staging_path}" >> $GITHUB_ENV
+          export temp_path=/home/runner/work/spark/spark/var/tmp/spark
+          echo "temp_path=${temp_path}" >> $GITHUB_ENV
           export staging_archive=spark-offline-archive.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_OUTPUT
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+          echo "registry=registry.scality.com" >> $GITHUB_ENV
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
-          echo "registry=registry.scality.com" >> $GITHUB_OUTPUT
           echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
+      - name: Make staging and temp directories
+        run: |
+          mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }}
+      - name: Checkout the Spark repository into the staging directory
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.tag }}
+          path: ${{ env.temp_path }}
       - name: Registry Login
         uses: docker/login-action@v2.1.0
         with:
           registry: registry.scality.com
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Remove staging directory and old content
-        run: |
-          rm -rf /var/tmp/staging
       - name: Ensure makeself is installed
         run: |
-          apt-get update
-          apt install makeself
-      - name: Checkout the Spark repository into the staging directory
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.tag }}
-          path: /var/tmp/spark
+          sudo apt-get update
+          sudo apt-get install -y makeself
       - name: Create Archive from Spark
         run: |
-          cd /var/tmp/spark
-          git archive --output=${{ env.staging_path }}spark-offline-archive.tar --format-tar HEAD
+          cd ${{ env.temp_path }}
+          git archive --output=${{ env.staging_path }}/spark-repo.tar --format=tar HEAD
       - name: Pull containers from ${{ env.registry }}
         run: |
           docker pull ${{ env.registry }}/spark/spark-master:latest
@@ -63,13 +61,13 @@ jobs:
           docker pull docker.io/library/nginx:1.21.6-alpine
       - name: Save the images into the staging directory
         run: |
-          docker save -o ${{ env.staging_path }}spark/spark-master.tar ${{ env.registry }}/spark/spark-master:latest
-          docker save -o ${{ env.staging_path }}spark/spark-worker.tar ${{ env.registry }}/spark/spark-worker:latest
-          docker save -o ${{ env.staging_path }}spark/s3utils.tar ${{ env.registry }}/s3utils/s3utils:1.12.5
-          docker save -o ${{ env.staging_path }}spark/nginx.tar docker.io/library/nginx:1.21.6-alpine
+          docker save -o ${{ env.staging_path }}/spark-master.tar ${{ env.registry }}/spark/spark-master:latest
+          docker save -o ${{ env.staging_path }}/spark-worker.tar ${{ env.registry }}/spark/spark-worker:latest
+          docker save -o ${{ env.staging_path }}/s3utils.tar ${{ env.registry }}/s3utils/s3utils:1.12.5
+          docker save -o ${{ env.staging_path }}/nginx.tar docker.io/library/nginx:1.21.6-alpine
       - name: Copy the setup script into the staging directory
         run: |
-          cp /var/tmp/spark/scripts/offline-archive-setup.sh ${{ env.staging_path }}
+          cp ${{ env.temp_path }}/scripts/offline-archive-setup.sh ${{ env.staging_path }}/setup.sh
       - name: Create self extracting archive (SFX)
         run: |
           cd ${{ env.staging_path }}
@@ -77,15 +75,15 @@ jobs:
             --nocomp \
             --notemp \
             ${{ env.staging_path }} \
-            /var/tmp/${{ env.staging_archive }} \
+            ${{ env.temp_path }}/../${{ env.staging_archive }} \
             "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" \
             ./setup.sh
       - name: Examine self extracting archive (SFX)
         run: |
-          ls -l /var/tmp/${{ env.staging_archive }}
+          ls -l ${{ env.temp_path }}/../${{ env.staging_archive }}
       - name: Cleanup staging temp files
         run: |
-          rm -rf ${{ env.staging_path }} ${{ env.staging_path }}../spark
+          rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         env:
@@ -96,4 +94,4 @@ jobs:
           generate_release_notes: false
           target_commitish: ${{ github.sha }}
           prerelease: ${{ inputs.prerelease }}
-          files: /var/tmp/${{ env.staging_archive }}
+          files: ${{ env.temp_path }}/../${{ env.staging_archive }}
