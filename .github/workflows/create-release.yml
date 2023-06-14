@@ -18,14 +18,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Make staging and temp directories
-        run: |
-          mkdir -pv $HOME/var/tmp/{spark,staging}
-      - name: Checkout the Spark repository into the staging directory
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.tag }}
-          path: ./var/tmp/spark
       - name: Create Variables
         run: |
           export image_path=spark-dev/deployment
@@ -39,6 +31,14 @@ jobs:
           echo "registry=registry.scality.com" >> $GITHUB_ENV
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
           echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
+      - name: Make staging and temp directories
+        run: |
+          mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }}
+      - name: Checkout the Spark repository into the staging directory
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.tag }}
+          path: ${{ env.temp_path }}
       - name: Registry Login
         uses: docker/login-action@v2.1.0
         with:
