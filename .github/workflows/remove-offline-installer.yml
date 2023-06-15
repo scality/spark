@@ -1,0 +1,45 @@
+name: Remove Tagged Offline Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to use when removing offline installer from packages server
+        required: false
+      prerelease:
+        description: Is the release to remove a pre release?
+        type: boolean
+        required: false
+        default: false
+
+run-name: Remove Offline Installer ${{ inputs.tag }}
+
+jobs:
+  release:
+    environment: packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set the staging_archive name
+        run: |
+          export staging_archive=spark-offline-archive-${{ inputs.tag }}.run
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+        if: ${{ ! inputs.prerelease }}
+      - name: Set the staging_archive name if prerelease
+        run: |
+          export staging_archive=spark-offline-archive-prerelease.run
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+        if: ${{ inputs.prerelease }}
+      - name: Make staging, ssh and temp directories
+        run: |
+          mkdir -pv ~/.ssh
+          chmod 700 ~/.ssh
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      - name: Copy SSH config
+        run: |
+          cp ./var/tmp/spark/.github/config/packages_ssh_config ~/.ssh/config
+      - name: Remove the prerelease self extracting archive (SFX) from the packages server
+        run: |
+          ssh ${{ secrets.PACKAGES_SSH_USER }}@packages rm -rf /mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/${{ env.staging_archive }}

@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag to be released
+        description: Tag to use generating offline installer
         required: true
       prerelease:
-        description: Is the release a pre releae?
+        description: Is the release a pre release?
         type: boolean
         required: false
         default: false
@@ -27,11 +27,19 @@ jobs:
           echo "staging_path=${staging_path}" >> $GITHUB_ENV
           export temp_path=/home/runner/work/spark/spark/var/tmp/spark
           echo "temp_path=${temp_path}" >> $GITHUB_ENV
-          export staging_archive=spark-offline-archive.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
           echo "registry=registry.scality.com" >> $GITHUB_ENV
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
           echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
+      - name: Set the staging_archive name
+        run: |
+          export staging_archive=spark-offline-archive-${{ inputs.tag }}.run
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+        if: ${{ ! inputs.prerelease }}
+      - name: Set the staging_archive name if prerelease
+        run: |
+          export staging_archive=spark-offline-archive-prerelease.run
+          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
+        if: ${{ inputs.prerelease }}
       - name: Make staging, ssh and temp directories
         run: |
           mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }} ~/.ssh
@@ -88,12 +96,6 @@ jobs:
             ${{ env.temp_path }}/../${{ env.staging_archive }} \
             "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" \
             ./setup.sh
-      - name: Examine self extracting archive (SFX)
+      - name: Copy the self extracting archive (SFX) to packages server
         run: |
-          ls -l ${{ env.temp_path }}/../${{ env.staging_archive }}
-      - name: Cleanup staging temp files
-        run: |
-          rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
-      - name: Examine the filesystem of packages.scality.com
-        run: |
-          ssh ${{ secrets.PACKAGES_USER }}@packages 'find / -iname spark-offline-archive.run'
+          scp ${{ env.temp_path }}/../${{ env.staging_archive }} ${{ secrets.PACKAGES_SSH_USER }}@packages:/mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/
