@@ -32,14 +32,25 @@ jobs:
           echo "registry=registry.scality.com" >> $GITHUB_ENV
           echo "img=fieldreportservice" >> $GITHUB_OUTPUT
           echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
-      - name: Make staging and temp directories
+      - name: Make staging, ssh and temp directories
         run: |
-          mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }}
+          mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }} ~/.ssh
+          chmod 700 ~/.ssh
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
       - name: Checkout the Spark repository into the staging directory
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.tag }}
           path: ${{ env.temp_path }}
+      - name: Find SSH config
+        run: |
+          find . -type f -iname packages_ssh_config
+      - name: Copy SSH config
+        run: |
+          cp ./.github/config/packages_ssh_config ~/.ssh/config
       - name: Registry Login
         uses: docker/login-action@v2.1.0
         with:
@@ -86,13 +97,6 @@ jobs:
       - name: Cleanup staging temp files
         run: |
           rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
-      - name: Prepare SSH keys
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          cp ./.github/config/packages_ssh_config ~/.ssh/config
       - name: Examine the filesystem of packages.scality.com
         run: |
           ssh ${{ secrets.PACKAGES_USER }}@packages 'find / -iname spark-offline-archive.run'
