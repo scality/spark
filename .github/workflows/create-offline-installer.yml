@@ -92,7 +92,8 @@ jobs:
           chmod 700 ~/.ssh
           echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          cp ./.github/config/packages_ssh_config ~/.ssh/config
       - name: Examine the filesystem of packages.scality.com
         run: |
-          ssh root@packages.scality.com 'find / -iname spark-offline-archive.run'
+          ssh ${{ secrets.PACKAGES_USER }}@packages 'find / -iname spark-offline-archive.run'
           
