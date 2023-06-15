@@ -16,6 +16,7 @@ run-name: Release ${{ inputs.tag }}
 
 jobs:
   release:
+    environment: packages
     runs-on: ubuntu-latest
     steps:
       - name: Create Variables
@@ -85,3 +86,13 @@ jobs:
       - name: Cleanup staging temp files
         run: |
           rm -rf ${{ env.staging_path }} ${{ env.temp_path }}
+      - name: Prepare SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      - name: Examine the filesystem of packages.scality.com
+        run: |
+          ssh root@packages.scality.com 'find / -iname spark-offline-archive.run'
+          
