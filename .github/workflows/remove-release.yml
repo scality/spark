@@ -1,4 +1,4 @@
-name: Remove Tagged Offline Installer
+name: Remove Release
 
 on:
   workflow_dispatch:
@@ -14,22 +14,19 @@ on:
 
 run-name: Remove Offline Installer ${{ inputs.tag }}
 
+env:
+  staging_archive: spark-offline-archive-${{ inputs.tag }}${{ inputs.prerelease == true && '-prerelease' || '' }}.run
+
 jobs:
-  release:
+  remove-release:
     environment: packages
     runs-on: ubuntu-latest
     steps:
-      - name: Set the staging_archive name
-        run: |
-          export staging_archive=spark-offline-archive-${{ inputs.tag }}.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
-        if: ${{ ! inputs.prerelease }}
-      - name: Set the staging_archive name if prerelease
-        run: |
-          export staging_archive=spark-offline-archive-prerelease.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
-        if: ${{ inputs.prerelease }}
-      - name: Make staging, ssh and temp directories
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          sparse-checkout: .github/config
+      - name: Make ssh directory
         run: |
           mkdir -pv ~/.ssh
           chmod 700 ~/.ssh
@@ -39,7 +36,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
       - name: Copy SSH config
         run: |
-          cp ./var/tmp/spark/.github/config/packages_ssh_config ~/.ssh/config
+          cp .github/config/packages_ssh_config ~/.ssh/config
       - name: Remove the prerelease self extracting archive (SFX) from the packages server
         run: |
           ssh ${{ secrets.PACKAGES_SSH_USER }}@packages rm -rf /mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/${{ env.staging_archive }}

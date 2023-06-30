@@ -1,4 +1,4 @@
-name: Create Offline Installer
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -14,48 +14,34 @@ on:
 
 run-name: Release ${{ inputs.tag }}
 
+env:
+  image_path: spark-dev/deployment
+  staging_path: /home/runner/work/spark/spark/staging
+  registry: registry.scality.com
+  img: fieldreportservice
+  image: registry.scality.com/spark-dev/deployment
+  staging_archive: spark-offline-archive-${{ inputs.tag }}${{ inputs.prerelease == true && '-prerelease' || '' }}.run
+
 jobs:
   release:
     environment: packages
     runs-on: ubuntu-latest
     steps:
-      - name: Create Variables
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Make staging and ssh directories
         run: |
-          export image_path=spark-dev/deployment
-          echo "image_path=${image_path}" >> $GITHUB_ENV 
-          export staging_path=/home/runner/work/spark/spark/var/tmp/staging
-          echo "staging_path=${staging_path}" >> $GITHUB_ENV
-          export temp_path=/home/runner/work/spark/spark/var/tmp/spark
-          echo "temp_path=${temp_path}" >> $GITHUB_ENV
-          echo "registry=registry.scality.com" >> $GITHUB_ENV
-          echo "img=fieldreportservice" >> $GITHUB_OUTPUT
-          echo "image=${registry}/${image_path}" >> $GITHUB_OUTPUT
-      - name: Set the staging_archive name
-        run: |
-          export staging_archive=spark-offline-archive-${{ inputs.tag }}.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
-        if: ${{ ! inputs.prerelease }}
-      - name: Set the staging_archive name if prerelease
-        run: |
-          export staging_archive=spark-offline-archive-prerelease.run
-          echo "staging_archive=${staging_archive}" >> $GITHUB_ENV
-        if: ${{ inputs.prerelease }}
-      - name: Make staging, ssh and temp directories
-        run: |
-          mkdir -pv ${{ env.staging_path }} ${{ env.temp_path }} ~/.ssh
+          mkdir -pv ${{ env.staging_path }} ~/.ssh
           chmod 700 ~/.ssh
       - name: Prepare SSH key
         run: |
           echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-      - name: Checkout the Spark repository into the staging directory
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.tag }}
-          path: ${{ env.temp_path }}
       - name: Copy SSH config
         run: |
-          cp ./var/tmp/spark/.github/config/packages_ssh_config ~/.ssh/config
+          cp .github/config/packages_ssh_config ~/.ssh/config
       - name: Registry Login
         uses: docker/login-action@v2.1.0
         with:
@@ -68,7 +54,6 @@ jobs:
           sudo apt-get install -y makeself
       - name: Create Archive from Spark
         run: |
-          cd ${{ env.temp_path }}
           git archive --output=${{ env.staging_path }}/spark-repo.tar --format=tar HEAD
       - name: Pull containers from ${{ env.registry }}
         run: |
@@ -84,7 +69,7 @@ jobs:
           docker save -o ${{ env.staging_path }}/nginx.tar docker.io/library/nginx:1.21.6-alpine
       - name: Copy the setup script into the staging directory
         run: |
-          cp ${{ env.temp_path }}/scripts/offline-archive-setup.sh ${{ env.staging_path }}/setup.sh
+          cp ./scripts/offline-archive-setup.sh ${{ env.staging_path }}/setup.sh
           chmod +x ${{ env.staging_path }}/setup.sh
       - name: Create self extracting archive (SFX)
         run: |
@@ -93,9 +78,19 @@ jobs:
             --nocomp \
             --notemp \
             ${{ env.staging_path }} \
-            ${{ env.temp_path }}/../${{ env.staging_archive }} \
+            ../${{ env.staging_archive }} \
             "Scality Spark Orphan Hunter SFX (Self Extracting Archive)" \
             ./setup.sh
       - name: Copy the self extracting archive (SFX) to packages server
         run: |
-          scp ${{ env.temp_path }}/../${{ env.staging_archive }} ${{ secrets.PACKAGES_SSH_USER }}@packages:/mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/
+          scp ${{ env.staging_archive }} ${{ secrets.PACKAGES_SSH_USER }}@packages:/mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Release ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag }}
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+          prerelease: ${{ inputs.prerelease }}

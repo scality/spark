@@ -1,0 +1,32 @@
+name: Remove Prereleases
+
+on:
+  schedule:
+    - cron:  '0 4 * * *'
+  workflow_dispatch:
+
+run-name: Remove Prereleases - Offline Installers
+
+jobs:
+  remove-prereleases-scheduled:
+    environment: packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          sparse-checkout: .github/config
+      - name: Make ssh directory
+        run: |
+          mkdir -pv ~/.ssh
+          chmod 700 ~/.ssh
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      - name: Copy SSH config
+        run: |
+          cp .github/config/packages_ssh_config ~/.ssh/config
+      - name: Remove the prerelease self extracting archive (SFX) from the packages server
+        run: |
+          ssh ${{ secrets.PACKAGES_SSH_USER }}@packages 'rm -rf /mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/spark-offline-archive*prerelease.run'
