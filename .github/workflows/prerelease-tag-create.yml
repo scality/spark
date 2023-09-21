@@ -7,7 +7,7 @@ on:
 
 jobs:
   call-release-workflow:
-    uses: scality/spark/.github/workflows/release.yml@master
+    uses: ./.github/workflows/release.yml
     with:
       tag: ${{ github.ref_name }}
       prerelease: true
