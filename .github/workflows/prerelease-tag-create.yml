@@ -12,7 +12,6 @@ jobs:
       tag: ${{ github.ref_name }}
       prerelease: true
     secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REGISTRY_LOGIN: ${{ secrets.REGISTRY_LOGIN }}
       REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
       PACKAGES_SSH_PRIVATE_KEY: ${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}

@@ -13,8 +13,6 @@ on:
         required: false
         default: false
     secrets:
-      GITHUB_TOKEN:
-        required: true
       REGISTRY_LOGIN:
         required: true
       REGISTRY_PASSWORD:
