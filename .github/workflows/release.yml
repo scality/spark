@@ -1,10 +1,22 @@
 name: Create Release
 
 on:
+  workflow_call:
+    inputs:
+        tag:
+          description: Tag to use generating offline installer
+          type: string
+          required: true
+        prerelease:
+          description: Is the release a pre release?
+          type: boolean
+          required: false
+          default: false
   workflow_dispatch:
     inputs:
       tag:
         description: Tag to use generating offline installer
+        type: string
         required: true
       prerelease:
         description: Is the release a pre release?

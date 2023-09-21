@@ -1,0 +1,13 @@
+name: Create Prerelease on tag creation
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  call-release-workflow:
+    uses: scality/spark/.github/workflows/release.yml@master
+    with:
+      tag: ${{ github.ref_name }}
+      prerelease: true
