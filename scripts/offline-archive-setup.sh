@@ -17,4 +17,4 @@ ${sudo} cd ../ && mv ./staging /var/tmp/
 ${sudo} tar -C /root -x -v -f /var/tmp/staging/spark-repo.tar spark/ansible
 ${sudo} echo -e "spark-offline-archive.run has extracted itself.\n"
 ${sudo} echo -e "To continue with the staged deployment cd into ~/spark/ansible"
-${sudo} echo -e"and execute run.yml without the staging tag."
+${sudo} echo -e "and execute run.yml without the staging tag."
