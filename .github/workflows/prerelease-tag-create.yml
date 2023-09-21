@@ -7,7 +7,9 @@ on:
 
 jobs:
   call-release-workflow:
+    environment: packages
     uses: scality/spark/.github/workflows/release.yml@master
     with:
       tag: ${{ github.ref_name }}
       prerelease: true
+    secrets: inherit
