@@ -39,4 +39,4 @@ jobs:
           cp .github/config/packages_ssh_config ~/.ssh/config
       - name: Remove the prerelease self extracting archive (SFX) from the packages server
         run: |
-          ssh ${{ secrets.PACKAGES_SSH_USER }}@packages rm -rf /mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/${{ env.staging_archive }}
+          ssh ${{ secrets.PACKAGES_SSH_USER }}@packages rm -f /mnt/cephstorage/www/html/packages/extras/centos/7/x86_64/scality/${{ env.staging_archive }}
