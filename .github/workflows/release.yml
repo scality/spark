@@ -1,10 +1,31 @@
 name: Create Release
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag to use generating offline installer
+        type: string
+        required: true
+      prerelease:
+        description: Is the release a pre release?
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      REGISTRY_LOGIN:
+        required: true
+      REGISTRY_PASSWORD:
+        required: true
+      PACKAGES_SSH_PRIVATE_KEY:
+        required: true
+      PACKAGES_SSH_USER:
+        required: true
   workflow_dispatch:
     inputs:
       tag:
         description: Tag to use generating offline installer
+        type: string
         required: true
       prerelease:
         description: Is the release a pre release?
