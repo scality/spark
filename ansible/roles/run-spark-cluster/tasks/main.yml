@@ -1,45 +1,5 @@
 ---
 
-- name: Ensure facts directory exists
-  file:
-    state: directory
-    path: /etc/ansible/facts.d
-  delegate_to: "{{ groups['supervisor'][0] }}"
-  run_once: true
-  tags:
-    - run::configs
-    - run::config-sample
-
-- name: Add salt pillar to facts temporarily
-  copy:
-    src: /srv/scality/pillar/scality-common.sls
-    dest: /etc/ansible/facts.d/scality-salt-pillar.yml
-    remote_src: true
-  delegate_to: "{{ groups['supervisor'][0] }}"
-  run_once: true
-  tags:
-    - run::configs
-    - run::config-sample
-
-- name: Gather facts from supervisor for sample config generation
-  setup:
-    fact_path: /etc/ansible/facts.d/
-  delegate_to: "{{ groups['supervisor'][0] }}"
-  run_once: true
-  tags:
-    - run::configs
-    - run::config-sample
-
-- name: Remove pillar from facts
-  file:
-    state: absent
-    path: /etc/ansible/facts.d/scality-salt-pillar.yml
-  delegate_to: "{{ groups['supervisor'][0] }}"
-  run_once: true
-  tags:
-    - run::configs
-    - run::config-sample
-
 - name: Copy start_spark.sh
   template:
     src: start_spark.sh.j2
@@ -62,17 +22,6 @@
         accept_hostkey: true
         dest: /root/spark
         repo: git@github.com:scality/spark.git
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-
-    - name: Create sample config.yml
-      template:
-        src: config-template.yml.j2
-        dest: /root/spark/scripts/config/config-SAMPLE.yml
-        mode: 0644
-      tags:
-        - run::configs
-        - run::config-sample
       when:
         - inventory_hostname in groups['sparkmaster']|default([])
 
@@ -147,17 +96,6 @@
         - run::configs
       when:
         - inventory_hostname in groups['sparkmaster']
-
-    - name: Create sample config.yml
-      template:
-        src: config-template.yml.j2
-        dest: /root/spark/scripts/config/config-SAMPLE.yml
-        mode: 0644
-      tags:
-        - run::configs
-        - run::config-sample
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
 
     - name: Load the master container
 #      docker_image:

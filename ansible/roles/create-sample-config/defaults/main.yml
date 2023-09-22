@@ -1,0 +1,22 @@
+---
+mems: "{{ ansible_play_hosts|
+          map('extract', hostvars, ['ansible_memory_mb','real','free'])|
+          list }}"
+worker_mems: "{{ dict(ansible_play_hosts|zip(mems)) }}"
+mems_average: "{{ worker_mems.values()|sum / worker_mems.values()|length }}"
+mems_min_real_free: "{{ worker_mems.values() | min }}"
+mems_min_no_pressure: "{{ mems_min_real_free | int - 2000 }}"
+
+vcpus: "{{ ansible_play_hosts|
+           map('extract', hostvars, 'ansible_processor_vcpus')|
+           list }}"
+worker_vcpus: "{{ dict(ansible_play_hosts|zip(vcpus)) }}"
+vcpus_average: "{{ (worker_vcpus.values()|sum / worker_vcpus.values()|length) | int }}"
+
+instance_factor: "{% if vcpus_average|int <= 8 %}1{% elif vcpus_average|int <= 24 %}2{% elif vcpus_average|int >= 32 %}3{% endif %}"
+mems_max_per_executor: "{{ mems_average / instance_factor }}"
+mems_min_per_executor: "{{ (mems_min_no_pressure|int) / (instance_factor|int) }}"
+instance_reduction: "{% if groups['sparkmaster'][0] in groups['sparkworkers'] %}-1{% else %}0{% endif %}"
+executor_cores: "{% if vcpus_average|int >= 72 %}3{% elif vcpus_average|int >= 48 %}2{% else %}1{% endif %}"
+executor_instances: "{{ (instance_reduction | int + (instance_factor | int * (groups['sparkworkers'] | count))) | int }}"
+executor_memory: "{% if mems_min_per_executor|int <= 1 %}1{% elif mems_min_per_executor|int <= 8 %}4{% elif mems_min_per_executor|int >= 12 %}6{% endif %}"
