@@ -1,0 +1,18 @@
+name: Create Prerelease on tag creation
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  call-release-workflow:
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ github.ref_name }}
+      prerelease: true
+    secrets:
+      REGISTRY_LOGIN: ${{ secrets.REGISTRY_LOGIN }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+      PACKAGES_SSH_PRIVATE_KEY: ${{ secrets.PACKAGES_SSH_PRIVATE_KEY }}
+      PACKAGES_SSH_USER: ${{ secrets.PACKAGES_SSH_USER }}
