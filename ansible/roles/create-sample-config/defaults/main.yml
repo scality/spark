@@ -1,4 +1,6 @@
 ---
+bucket_name: scality-spark-cleanup
+
 mems: "{{ ansible_play_hosts|
           map('extract', hostvars, ['ansible_memory_mb','real','free'])|
           list }}"

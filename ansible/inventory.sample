@@ -46,21 +46,6 @@ super      ansible_host=10.100.7.27
 #worker-01  ansible_host=10.100.3.73
 #worker-02  ansible_host=10.100.4.93
 #worker-03  ansible_host=10.100.4.39
-rhel9-jump ansible_host=192.168.122.179
-#staging_host ansible_host={{IP_ADDRESS}}
-
-
-[all:vars]
-staging_path=/var/tmp/staging/
-staging_archive=spark-offline-archive.run
-offline_mode=True
-registry_user="Trevor_Benson"
-registry_password=""
-
-[staging]
-# Using localhost requires ssh is enabled, and docker or podman is installed.
-# Set the {{ docker }} variable to the installed container runtime engine
-localhost docker=podman
 
 [sparkcluster:children]
 sparkmaster
@@ -68,14 +53,14 @@ sparkworkers
 
 # Place 1  into sparkmaster group
 [sparkmaster]
-#stor-06
+stor-01
 
 # Place all workers into sparkworkers. Add your master to run a worker on it.
 [sparkworkers]
 stor-01
 stor-02
-#stor-03
-#stor-04
+stor-03
+stor-04
 stor-05
 stor-06
 #conn-01
@@ -88,7 +73,16 @@ stor-06
 # To automatically fill out the config.yml define a supervisor group
 # and include an ansible host in the group for the supervisor
 [supervisor]
-#super
+super
+
+
+
+
+##############################################################################################
+#### BELOW SECTIONS DO NOT NEED TO BE MODIFIED UNLESS RUNNING A DECOUPLED ENVIRONMENT     ####
+#### DECOUPLED IS WHEN THE WORKER DOES NOT HAVE "LOCALHOST" S3C AND SREBUILDD CONNECTORS  ####
+#### (i.e. 127.0.0.1:8000 & 127.0.0.1:81) AND NEEDS TO USE A SIDE CAR TO LOAD BALANCE     ####
+##############################################################################################
 
 # When running decoupled (standalone) S3C connectors as spark workers define the
 # runners_srebuildd group and put all storage nodes with the srebuildd connector
@@ -97,7 +91,7 @@ stor-06
 # can be defined in ``config.yml``. The sidecar will round robin over all
 # members of the runners_srebuildd group.
 [runners_srebuildd]
-stor-01
+#stor-01
 #stor-02
 #stor-03
 #stor-04
@@ -112,7 +106,7 @@ stor-01
 # members of the runners_s3 group.
 [runners_s3]
 #stor-01
-stor-02
+#stor-02
 #stor-03
 #stor-04
 #stor-05
