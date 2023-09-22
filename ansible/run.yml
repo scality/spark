@@ -13,6 +13,15 @@
         - never
         - deploy
 
+- hosts: sparkmaster
+  roles:
+    - role: create-sample-config
+      tags:
+        - never
+        - deploy
+        - run::configs
+        - run::config-sample
+        
 - hosts: sparkworkers:!runners_s3:!runners_srebuildd
   roles:
     - role: run-spark-sidecar
