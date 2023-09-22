@@ -6,4 +6,3 @@ staging_path: /var/tmp/staging/
 global_data_host: "{{ data_host | default(ansible_host) }}"
 
 offline_mode: True
-bucket_name: scality-spark-cleanup
