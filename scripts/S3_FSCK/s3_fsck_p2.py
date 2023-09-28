@@ -50,14 +50,18 @@ dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
 
 # rename the column _c1 to digkey, the next write will output a header that uses digkey instead of _c1
+# digkey: the unqiue part of a main chunk before service id, arc schema, and class are appended
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
-# inner join the s3keys and ringkeys on the digkey column
-# the result will be a dataframe with the columns ringkey, digkey
-# the leftanti option will remove the rows that are present in both dataframes.
+# inner join the s3keys (sproxyd input key) and ringkeys (the main chunk of the strip or replica)
+# on the digkey column. The result will be a dataframe with the columns ringkey, digkey
+# the inner join leftani will not return rows that are present in both dataframes, 
+# eliminating ringkeys (main chunks) that have metadata in s3 (not application orphans).
+# digkey: the unqiue part of a main chunk before service id, arc schema, and class are appended
+# ringkey: the main chunk of the strip or replica
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 
-# Create the final dataframe with only the ringkey column
+# Create the final dataframe with only the ringkey (the main chunk of the strip or replica)
 df_final = inner_join_false.select("ringkey")
 
 # write the final dataframe to a csv file
