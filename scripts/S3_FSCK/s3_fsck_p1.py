@@ -45,15 +45,15 @@ df = spark.read.format("csv").option("header", "false").option("inferSchema", "t
 # list the ARC SPLIT main chunks with service ID 50 from column 2
 df_split = df.filter(df["_c1"].rlike(r".*000000..50........$") & df["_c3"].rlike("0")).select("_c1")
 
-# Match keys which end in 70 from column 2
+# Match keys which end in 70 from column 2, to a new dataframe dfARCsingle
 dfARCsingle = df_split.filter(df["_c1"].rlike(r".*70$"))
 # Filter out when less than 3 stripe chunks (RING orphans)
 dfARCsingle = dfARCsingle.groupBy("_c1").count().filter("count > 3")
 
-# dfARCsingle _c1 (column 2) is now the ringkey ???
+# rename dfARCsingle _c1 (column 2): it is now the "ringkey" (aka. "main chunk") ???
 dfARCsingle = dfARCsingle.withColumn("ringkey",dfARCsingle["_c1"])
 
-# filter _c1 (column 2) for specific COS protection
+# in df_split, filter _c1 (column 2) RING key main chunk for specific COS protection
 dfCOSsingle = df_split.filter(df["_c1"].rlike(r".*" + str(COS) + "0$"))
 
 # count the number of chunks in _c1 (column 2) found for each key
