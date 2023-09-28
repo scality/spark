@@ -118,6 +118,7 @@ def sparse(f):
 
 
 def check_split(key):
+    """Check if the key is split or not. Return True if split, False if not split, None if error (404, 50X, etc.)"""
     url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
@@ -126,8 +127,10 @@ def check_split(key):
 
 
 def blob(row):
+    """Return a list of dict with the key, subkey and digkey"""
     key = row._c2
     split = check_split(key)
+    # If the key is not found, return a dict with the key, subkey and digkey set to NOK_HTTP
     if not split['result']:
         return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
     if split['is_split']:
@@ -150,21 +153,28 @@ def blob(row):
                     rtlst.append(
                         {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
                     )
+                # If the key is split and request is OK, return a list of dict with the key, subkey and digkey set to the md5 of the subkey
                 return rtlst
+            # If the key is split and request is not OK, return a dict with the key, with both subkey and digkey set to NOK
             return [{"key": key, "subkey": "NOK", "digkey": "NOK"}]
         except requests.exceptions.ConnectionError as e:
+            # If the key is split and request is not OK, return a dict with the key, with both subkey and digkey set to NOK
             return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
     if not split['is_split']:
+        # If the key is not split, return a dict with the key, subkey set to SINGLE and digkey set to the md5 of the key
         return [{"key": key, "subkey": "SINGLE", "digkey": gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
 
+# reading without a header, the _c0, _c1, _c2 are the default column names of column 1, 2, 3 for the csv
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
+# repartition the dataframe to have the same number of partitions as the number of executors * cores
 df = df.repartition(PARTITIONS)
 rdd = df.rdd.map(lambda x : blob(x))
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
 single = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
+# write the dataframe to a csv file with a header
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)

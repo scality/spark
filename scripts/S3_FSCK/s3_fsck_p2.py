@@ -39,16 +39,28 @@ spark = SparkSession.builder \
      .getOrCreate()
 
 
+# s3keys are read from the verifySproxydKeys.js scripts output
 s3keys = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
+# ringkeys are read from the listkeys.py (or ringsh dump) scripts output
 ringkeys = "%s://%s/%s/s3fsck/arc-keys.csv" % (PROTOCOL, PATH, RING)
 
+# reading with a header, the columns are named. The column _c1 will be whatever column the _c1 header is assigned to
 dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(s3keys)
+# reading with a header, the columns are named. The column _c1 will be whatever column the _c1 header is assigned to
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
 
+# rename the column _c1 to digkey, the next write will output a header that uses digkey instead of _c1
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
+# inner join the s3keys and ringkeys on the digkey column
+# the result will be a dataframe with the columns ringkey, digkey
+# the leftanti option will remove the rows that are present in both dataframes.
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
+
+# Create the final dataframe with only the ringkey column
 df_final = inner_join_false.select("ringkey")
+
+# write the final dataframe to a csv file
 allmissing = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 df_final.write.format("csv").mode("overwrite").options(header="false").save(allmissing)
 

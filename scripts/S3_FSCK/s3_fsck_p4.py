@@ -68,9 +68,18 @@ def deletekey(row):
 
 
 files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
+
+# reading without a header, the _c0, _c1, _c2, _c3 are the default column names for column 1, 2, 3, 4
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+# rename the column _c0 (column 1) to ringkey
 df = df.withColumnRenamed("_c0","ringkey")
+
+# repartition the dataframe to the number of partitions (executors * cores)
 df = df.repartition(PARTITIONS)
+
+# map the deletekey function to the dataframe
 rdd = df.rdd.map(deletekey).toDF()
+
 deletedorphans = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)
+# write the dataframe to a csv file with the results of the deletekey function
 rdd.write.format("csv").mode("overwrite").options(header="false").save(deletedorphans)
