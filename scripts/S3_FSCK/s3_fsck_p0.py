@@ -31,6 +31,7 @@ ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
+# The arcindex is a map between the ARC Schema and the hex value found in the ringkey in the 24 bits preceding the last 8 bits of the key
 arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
@@ -128,10 +129,12 @@ def check_split(key):
 
 def blob(row):
     """Return a list of dict with the key, subkey and digkey"""
+    # set key from row._c2 (column 3) which contains an sproxyd input key
     key = row._c2
+    # use the sproxyd input key to find out if the key is split or not
     split = check_split(key)
-    # If the key is not found, return a dict with the key, subkey and digkey set to NOK_HTTP
     if not split['result']:
+        # If the key is not found, return a dict with the key, subkey and digkey set to NOK_HTTP
         return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
     if split['is_split']:
         try:
@@ -149,7 +152,12 @@ def blob(row):
                         chunks = chunk + chunk
                 chunkshex = chunks.encode("hex")
                 rtlst = []
+                # the k value is the subkey, a subkey is the sproxys input key for each stripe of the split
                 for k in list(set(sparse(chunkshex))):
+                    # "key": key == primary sproxyd input key of a split object
+                    # "subkey": k == subkey sproxyd input key of an individual stripe of a split object
+                    # "digkey": gen_md5_from_id(k)[:26] == md5 of the subkey, which is the unique part of a
+                    # main chunk before service id, arc schema, and class are appended
                     rtlst.append(
                         {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
                     )
