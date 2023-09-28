@@ -42,6 +42,8 @@ env:
   img: fieldreportservice
   image: registry.scality.com/spark-dev/deployment
   staging_archive: spark-offline-archive-${{ inputs.tag }}${{ inputs.prerelease == true && '-prerelease' || '' }}.run
+  s3utils_image: registry.scality.com/s3utils/s3utils:1.14.0
+  nginx_image: docker.io/library/nginx:1.21.6-alpine
 
 jobs:
   release:
@@ -78,14 +80,14 @@ jobs:
         run: |
           docker pull ${{ env.registry }}/spark/spark-master:latest
           docker pull ${{ env.registry }}/spark/spark-worker:latest
-          docker pull ${{ env.registry }}/s3utils/s3utils:1.12.5
-          docker pull docker.io/library/nginx:1.21.6-alpine
+          docker pull ${{ env.s3utils_image }}
+          docker pull ${{ env.nginx_image }}
       - name: Save the images into the staging directory
         run: |
           docker save -o ${{ env.staging_path }}/spark-master.tar ${{ env.registry }}/spark/spark-master:latest
           docker save -o ${{ env.staging_path }}/spark-worker.tar ${{ env.registry }}/spark/spark-worker:latest
-          docker save -o ${{ env.staging_path }}/s3utils.tar ${{ env.registry }}/s3utils/s3utils:1.12.5
-          docker save -o ${{ env.staging_path }}/nginx.tar docker.io/library/nginx:1.21.6-alpine
+          docker save -o ${{ env.staging_path }}/s3utils.tar ${{ env.s3utils_image }}
+          docker save -o ${{ env.staging_path }}/nginx.tar ${{ env.nginx_image }}
       - name: Copy the setup script into the staging directory
         run: |
           cp ./scripts/offline-archive-setup.sh ${{ env.staging_path }}/setup.sh

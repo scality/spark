@@ -21,7 +21,7 @@ do
         -e "BUCKETS=${bucket}" \
         -e 'NO_MISSING_KEY_CHECK=1' \
         -e 'VERBOSE=1' \
-        registry.scality.com/s3utils/s3utils:1.12.5 \
+        registry.scality.com/s3utils/s3utils:1.14.0 \
         verifyBucketSproxydKeys.js  \
         > ${WORKDIR}/raw_${bucket}_keys.txt
 
