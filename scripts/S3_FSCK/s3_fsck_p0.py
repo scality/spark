@@ -128,7 +128,7 @@ def check_split(key):
 
 
 def blob(row):
-    """Return a list of dict with the key, subkey and digkey"""
+    """Return a list of dict with the sproxyd input key, its subkey if it exists and digkey"""
     # set key from row._c2 (column 3) which contains an sproxyd input key
     key = row._c2
     # use the sproxyd input key to find out if the key is split or not
