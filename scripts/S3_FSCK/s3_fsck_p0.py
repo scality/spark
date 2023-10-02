@@ -132,6 +132,7 @@ def blob(row):
     # set key from row._c2 (column 3) which contains an sproxyd input key
     key = row._c2
     # use the sproxyd input key to find out if the key is split or not
+    # check_split(key) is used to transform the input key into a RING key, assess if it exists AND whether it is a SPLIT.
     split = check_split(key)
     if not split['result']:
         # If the key is not found, return a dict with the key, subkey and digkey set to NOK_HTTP
