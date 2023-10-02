@@ -119,7 +119,7 @@ def sparse(f):
 
 
 def check_split(key):
-    """Check if the key is split or not. Return True if split, False if not split, None if error (404, 50X, etc.)"""
+    """Check if the RING key is split or not. Return True if split, False if not split, None if error (422, 404, 50X, etc.)"""
     url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
