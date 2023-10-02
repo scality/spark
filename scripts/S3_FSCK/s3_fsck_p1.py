@@ -39,7 +39,10 @@ spark = SparkSession.builder \
 
 
 files = "%s://%s/%s/listkeys.csv" % (PROTOCOL, PATH, RING)
-# reading without a header, the _c0, _c1, _c2, _c3 are the default column names for column 1, 2, 3, 4  
+# listkeys.csv structure: 
+# { RING key, main chunk of the RING key, disk, flag }
+# e.g. 555555A4948FAA554034E155555555A61470C07A,8000004F3F3A54FFEADF8C00000000511470C070,g1disk1,0
+# reading listkeys.csv files without a header, the _c0, _c1, _c2, _c3 are the default column names for column 1, 2, 3, 4  
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 # list the ARC SPLIT main chunks with service ID 50 from column 2
