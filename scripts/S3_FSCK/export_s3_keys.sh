@@ -85,10 +85,11 @@ function list_buckets_of_rid() {
 		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: No buckets found in raft session ${RID}" | tee -a "${WORKDIR}/RID_${RID}.log"
 		exit "${RC_NO_BUCKETS_FOUND_IN_RID}"
 	fi
-    echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Found ${#BUCKETS[@]} buckets in raft session ${RID}" | tee -a "${WORKDIR}/RID_${RID}.log"
-    UNPROCESSED_BUCKETS=("${BUCKETS[@]}")
+	echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Found ${#BUCKETS[@]} buckets in raft session ${RID}" | tee -a "${WORKDIR}/RID_${RID}.log"
+	UNPROCESSED_BUCKETS=("${BUCKETS[@]}")
 }
 
+# shellcheck disable=SC2312
 function export_bucket_contents() {
 	if ! docker run \
 		--rm \
@@ -101,32 +102,33 @@ function export_bucket_contents() {
 		-e 'VERBOSE=1' \
 		registry.scality.com/s3utils/s3utils:1.14.0 \
 		verifyBucketSproxydKeys.js \
-		> "${WORKDIR}"/raw_"${bucket}"_keys.txt ;then
-			echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Failed to export keys for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-            echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[@]}" | tee -a "${WORKDIR}/RID_${RID}".log
-			exit "${RC_EXPORT_S3_KEYS_FAILURE}"
-    fi
+		>"${WORKDIR}"/raw_"${bucket}"_keys.txt; then
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Failed to export keys for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[*]}" | tee -a "${WORKDIR}/RID_${RID}".log
+		exit "${RC_EXPORT_S3_KEYS_FAILURE}"
+	fi
 }
 
-
+# shellcheck disable=SC2312
 function check_for_completed_scan() {
-    # See if the raw file contains the message "completed scan"
-    SCAN_COMPLETE=$(jq -r '. | select(.message | contains("completed scan"))' "${WORKDIR}/raw_${bucket}_keys.txt" | jq -s length)
-    if [[ ${SCAN_COMPLETE} -eq 0 ]]; then
-            echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: verifyBucketSproxydKeys scan did not complete for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-            exit "${RC_EXPORT_S3_KEYS_FAILURE}"
-        else
-            echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: verifyBucketSproxydKeys scan completed for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-    fi
+	# See if the raw file contains the message "completed scan"
+	SCAN_COMPLETE=$(jq -r '. | select(.message | contains("completed scan"))' "${WORKDIR}/raw_${bucket}_keys.txt" | jq -s length)
+	if [[ ${SCAN_COMPLETE} -eq 0 ]]; then
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: verifyBucketSproxydKeys scan did not complete for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+		exit "${RC_EXPORT_S3_KEYS_FAILURE}"
+	else
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: verifyBucketSproxydKeys scan completed for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+	fi
 }
 
+# shellcheck disable=SC2312
 function process_bucket_contents() {
-    echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Processing output of RID ${RID} - bucket ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-	if ! jq -r '. | select(.message | contains("sproxyd key"))  + {"bucket": .objectUrl  } | .bucket |= sub("s3://(?<bname>.*)/.*"; .bname) | .objectUrl |= sub("s3://.*/(?<oname>.*)$"; .oname) | [.bucket, .objectUrl, .sproxydKey] | @csv' "${WORKDIR}/raw_${bucket}_keys.txt" >"${WORKDIR}/${bucket}_keys.txt" ;then
-        echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Failed to process keys for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[@]}" | tee -a "${WORKDIR}/RID_${RID}".log
-        exit "${RC_PROCESS_KEYS_FAILURE}"
-    fi
+	echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Processing output of RID ${RID} - bucket ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+	if ! jq -r '. | select(.message | contains("sproxyd key"))  + {"bucket": .objectUrl  } | .bucket |= sub("s3://(?<bname>.*)/.*"; .bname) | .objectUrl |= sub("s3://.*/(?<oname>.*)$"; .oname) | [.bucket, .objectUrl, .sproxydKey] | @csv' "${WORKDIR}/raw_${bucket}_keys.txt" >"${WORKDIR}/${bucket}_keys.txt"; then
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Failed to process keys for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[*]}" | tee -a "${WORKDIR}/RID_${RID}".log
+		exit "${RC_PROCESS_KEYS_FAILURE}"
+	fi
 }
 
 # shellcheck disable=SC2312
@@ -135,43 +137,44 @@ function compare_raw_and_processed_counts() {
 	PROCESSED_COUNT=$(wc -l <"${WORKDIR}/${bucket}_keys.txt")
 	if [[ ${RAW_COUNT} -ne ${PROCESSED_COUNT} ]]; then
 		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: Raw and processed counts do not match for ${bucket} - RAW_COUNT: ${RAW_COUNT} != PROCESED_COUNT: ${PROCESSED_COUNT}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[@]}" | tee -a "${WORKDIR}/RID_${RID}".log
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") ERROR: Unprocessed buckets: ${UNPROCESSED_BUCKETS[*]}" | tee -a "${WORKDIR}/RID_${RID}".log
 		exit "${RC_COUNT_MISMATCH}"
 	else
 		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Raw and processed counts match for ${bucket} - RAW_COUNT: ${RAW_COUNT} == PROCESED_COUNT: ${PROCESSED_COUNT}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        # if the raw and processed counts match but are both 0 then print a warning that the bucket is empty
-        if [[ ${RAW_COUNT} -eq 0 ]]; then
-            echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: Bucket ${bucket} appears to be empty: RAW_COUNT: ${RAW_COUNT} == PROCESED_COUNT: ${PROCESSED_COUNT}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        fi
+		# if the raw and processed counts match but are both 0 then print a warning that the bucket is empty
+		if [[ ${RAW_COUNT} -eq 0 ]]; then
+			echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") WARNING: Bucket ${bucket} appears to be empty: RAW_COUNT: ${RAW_COUNT} == PROCESED_COUNT: ${PROCESSED_COUNT}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+		fi
 	fi
 
 }
 
+# shellcheck disable=SC2312
 function cleanup() {
-    if [[ ${KEEP_RAW_FILES} =~ ^[Yy]$ ]]; then
-        echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Keeping raw files for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-    else
-        echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Removing raw files for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        rm -f "${WORKDIR}/raw_${bucket}_keys.txt"
-    fi
+	if [[ ${KEEP_RAW_FILES} =~ ^[Yy]$ ]]; then
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Keeping raw files for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+	else
+		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Removing raw files for ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
+		rm -f "${WORKDIR}/raw_${bucket}_keys.txt"
+	fi
 }
 
 # shellcheck disable=SC2312
 function export_buckets() {
 	for bucket in "${BUCKETS[@]}"; do
 		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Starting export of ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        # Export the bucket contents from the Raft Session
+		# Export the bucket contents from the Raft Session
 		export_bucket_contents
-        # Check for scan completed
-        check_for_completed_scan
-        # Process the raw file into a csv
-        process_bucket_contents
-        # Check the raw and processed counts match
-        compare_raw_and_processed_counts
+		# Check for scan completed
+		check_for_completed_scan
+		# Process the raw file into a csv
+		process_bucket_contents
+		# Check the raw and processed counts match
+		compare_raw_and_processed_counts
 		echo
 		echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") INFO: Completed export of ${bucket}" | tee -a "${WORKDIR}/RID_${RID}".log | tee -a "${WORKDIR}/${bucket}".log
-        # Pop the bucket out of the UNPROCESSED_BUCKETS array
-        UNPROCESSED_BUCKETS=("${UNPROCESSED_BUCKETS[@]/$bucket}")
+		# Pop the bucket out of the UNPROCESSED_BUCKETS array
+		UNPROCESSED_BUCKETS=("${UNPROCESSED_BUCKETS[@]/${bucket}/}")
 	done
 }
 
@@ -180,7 +183,7 @@ function main() {
 	find_bucketd_instance
 	list_buckets_of_rid
 	export_buckets
-    cleanup
+	cleanup
 }
 
 # EXECUTION
