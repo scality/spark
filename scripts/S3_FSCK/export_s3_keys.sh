@@ -22,7 +22,7 @@ if [[ -z ${1} ]]; then
 	exit "${RC_NO_RAFT_ID}"
 else
 	RID=${1}
-	echo -e "\nWARNING: Don't forget to check for adequate disk space."
+	echo -e "\nWARNING: Don't forget to check for adequate disk space in ${WORKDIR}."
 	read -p "Do you want to keep the raw files after processing (make sure adequate space exists)? [y/N] " -n 1 -r
 	echo
 	KEEP_RAW_FILES=${REPLY}
