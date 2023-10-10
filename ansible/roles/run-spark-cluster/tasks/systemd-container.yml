@@ -1,0 +1,91 @@
+---
+
+  - name: create container management service systemd unit file
+    template:
+      src: systemd-container-template@.service.j2
+      dest: /etc/systemd/system/{{ systemd_container_template_name }}@.service
+      owner: root
+      group: root
+    register: _requirements_systemd_container_unit
+  
+  - name: create container management service systemd oneshot unit file
+    template:
+      src: systemd-container-oneshot-template@.service.j2
+      dest: /etc/systemd/system/{{ systemd_container_template_name }}-oneshot@.service
+      owner: root
+      group: root
+    register: _requirements_systemd_container_oneshot_unit
+  
+  - name: make sure Systemd's service containerd is started
+    systemd:
+      name: containerd
+      enabled: true
+      state: started
+  
+  - name: reload systemd units
+    systemd:
+      daemon_reload: yes
+
+  - name: create cfg directory
+    file:
+      path: '{{ systemd_container_cfg_path }}'
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+
+  - block:
+    - debug:
+        msg: "This is where to deploy the spark master image via container_image.py"
+
+    - name: create the pod-spark-master manifest file
+      template:
+        dest: '{{ systemd_container_cfg_path }}/pod-spark-{{ spark_role }}.yml'
+        owner: root
+        group: root
+        mode: '0644'
+        src: pod-spark.yml.j2
+
+    - name: create the ctr-spark-master manifest file
+      template:
+        src: ctr-spark.yml.j2
+        dest: '{{ systemd_container_cfg_path }}/ctr-spark-{{ spark_role }}.yml'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - debug:
+        msg: "Enable the spark master container via container.py (or systemd?)"
+
+    when: inventory_hostname in groups['sparkmaster']
+
+  - block:
+    - debug:
+        msg: "This is where to deploy the spark worker images (worker, s3utils, nginx) via container_image.py"
+
+    - name: create the pod-spark-worker manifest file
+      template:
+        src: pod-spark.yml.j2
+        dest: '{{ systemd_container_cfg_path }}/pod-spark-{{ spark_role }}.yml'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: create the ctr-spark-worker manifest file
+      template:
+        src: ctr-spark.yml.j2
+        dest: '{{ systemd_container_cfg_path }}/ctr-spark-{{ spark_role }}.yml'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: enable the spark worker container
+      systemd:
+        name: "{{ systemd_container_template_name }}@{{ container_name }}"
+        enabled: true
+        state: started
+    - debug:
+        msg: "Enable the spark worker container via container.py (or systemd?)"
+
+    when: inventory_hostname in groups['sparkworkers']

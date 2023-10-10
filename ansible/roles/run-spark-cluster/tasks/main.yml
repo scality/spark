@@ -1,72 +1,10 @@
 ---
 
-- name: Copy start_spark.sh
-  template:
-    src: start_spark.sh.j2
-    dest: /usr/local/bin/start_spark.sh
-    mode: 0744
-  tags:
-    - run::configs
-
-- name: Copy stop_spark.sh
-  template:
-    src: stop_spark.sh.j2
-    dest: /usr/local/bin/stop_spark.sh
-    mode: 0744
-  tags:
-    - run::configs
-
-- block:
-    - name: Clone the spark repository into /root/spark on the spark master
-      git:
-        accept_hostkey: true
-        dest: /root/spark
-        repo: git@github.com:scality/spark.git
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-
-    - name: Login to the registry {{ master_container_image.split('/')[0] | lower }}
-#      I had issues with docker_login, ansible on super has no community.general.docker_login
-#      community.general.docker_login:
-      docker_login:
-        registry_url: "{{ master_container_image.split('/')[0] | lower }}"
-        username: "{{ registry_user }}"
-        password: "{{ registry_password }}"
-      tags:
-        - run::images
-
-    - name: Pull {{ master_container_image }} image from registry
-      container_image:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - "{{ master_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-      tags:
-        - run::images
-
-    - name: Pull containers from registries
-      container_image:
-        name: "{{ item }}"
-        state: present
-      with_items:
-        - "{{ worker_container_image }}"
-        - "{{ s3utils_container_image }}"
-        - "{{ nginx_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkworkers']|default([])
-      tags:
-        - run::images
-  when: not offline_mode | bool
-
-- block:
+  - block:
     - name: Ensure staging directory exists
       file:
         state: directory
         path: "{{ staging_path }}"
-      tags:
-        - run::deployment
 
     - name: Synchronize the master image
       synchronize:
@@ -74,44 +12,23 @@
         dest: "{{ staging_path }}"
       with_items:
         - "{{ master_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-      tags:
-        - run::deployment
-
+  
     - name: Deploy the spark repository on spark master
       unarchive:
         src: "{{ staging_path }}spark-repo.tar"
         dest: /root/
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-      tags:
-        - run::deployment
 
     - name: Ensure spark config directory exists
       file:
         state: directory
         path: /root/spark/scripts/config
-      tags:
-        - run::configs
-      when:
-        - inventory_hostname in groups['sparkmaster']
 
-    - name: Load the master container
-#      docker_image:
-#        load_path: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
-#        name: "{{ item }}"
-#        state: present
-#        source: load
-      shell:
-        cmd: docker load < {{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar
-      with_items:
-        - "{{ master_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkmaster']|default([])
-      tags:
-        - run::deployment
+    tags:
+      - run::deployment  
+    when:
+      - inventory_hostname in groups['sparkmaster'] |default([])
 
+  - block:
     - name: Synchronize the workers images
       synchronize:
         src: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
@@ -120,38 +37,10 @@
         - "{{ worker_container_image }}"
         - "{{ s3utils_container_image }}"
         - "{{ nginx_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkworkers']|default([])
-      tags:
-        - run::deployment
 
-    - name: Load the worker and s3utils containers
-#      docker_image:
-#        load_path: "{{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar"
-#        name: "{{ item }}"
-#        state: present
-#        source: load
-      shell:
-        cmd: docker load < {{ staging_path }}{{ item.split(':')[0].split('/')[-1] }}.tar
-      with_items:
-        - "{{ worker_container_image }}"
-        - "{{ s3utils_container_image }}"
-        - "{{ nginx_container_image }}"
-      when:
-        - inventory_hostname in groups['sparkworkers']|default([])
-      tags:
-        - run::deployment
-  when: offline_mode | bool
+    tags:
+      - run::deployment
+    when:
+      - inventory_hostname in groups['sparkworkers']|default([])
 
-- name: Stop any running spark cluster
-  command: sh /usr/local/bin/stop_spark.sh
-  ignore_errors: true
-  tags:
-    - run::cluster
-    - run::cluster::stop
-
-- name: Start the spark cluster
-  command: sh /usr/local/bin/start_spark.sh
-  tags:
-    - run::cluster
-    - run::cluster::start
+  - include: '{{ ansible_os_family | lower }}.yml'

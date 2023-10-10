@@ -1,0 +1,17 @@
+[Unit]
+Description=Scality Spark %i oneshot container
+Requires=containerd.service
+After=containerd.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=root
+Group=root
+Type=oneshot
+ExecStart="{{ systemd_container_bin_path }}/manage-container.py" start \
+  --pod-manifest "{{ systemd_container_cfg_path }}/pod-%i.yml" \
+  --container-manifest "{{ systemd_container_cfg_path }}/ctr-%i.yml" \
+  --no-pull
+

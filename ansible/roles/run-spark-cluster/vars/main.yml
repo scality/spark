@@ -5,9 +5,15 @@
 #jump_host_staging: False
 
 
-container_name: 'scality-spark-worker'
+# container_name: 'scality-spark-worker'
 
 master_container_image: registry.scality.com/spark/spark-master:latest
 worker_container_image: registry.scality.com/spark/spark-worker:latest
 s3utils_container_image: registry.scality.com/s3utils/s3utils:1.12.5
 nginx_container_image: docker.io/library/nginx:1.21.6-alpine
+
+
+use_docker: '{{
+  True if (ansible_os_family != "RedHat" and
+  ansible_os_family != "Rocky") or
+  ansible_distribution_major_version | int < 8 else False }}'

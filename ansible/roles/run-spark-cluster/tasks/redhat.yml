@@ -1,0 +1,7 @@
+---
+
+- include: docker.yml
+  when: use_docker
+
+- include: systemd-container.yml
+  when: not use_docker

@@ -6,3 +6,9 @@ staging_path: /var/tmp/staging/
 global_data_host: "{{ data_host | default(ansible_host) }}"
 
 offline_mode: True
+
+systemd_container_s3c_dir: '/opt/scality/s3containers/'
+systemd_container_spark_dir: '/opt/scality/sparkcontainers/'
+systemd_container_cfg_path: '{{ systemd_container_spark_dir }}/cfg'
+systemd_container_bin_path: '{{ systemd_container_s3c_dir }}/bin'
+systemd_container_template_name: 'scality-spark'

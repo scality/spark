@@ -1,0 +1,23 @@
+[Unit]
+Description=Scality Spark %i container
+Requires=containerd.service
+After=containerd.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=root
+Group=root
+Restart=always
+RestartSec=10
+Type=simple
+ExecStart="{{ systemd_container_bin_path }}/manage-container.py" start \
+  --pod-manifest "{{ systemd_container_cfg_path }}/pod-%i.yml" \
+  --container-manifest "{{ systemd_container_cfg_path }}/ctr-%i.yml" \
+  --post-start "{{ systemd_container_cfg_path }}/poststart-%i.yml" \
+  --patch "{{ systemd_container_cfg_path }}/patch-%i.yml" \
+  --no-pull
+ExecStop="{{ systemd_container_bin_path }}/manage-container.py" stop \
+  --pod-manifest "{{ systemd_container_cfg_path }}/pod-%i.yml" \
+  --container-manifest "{{ systemd_container_cfg_path }}/ctr-%i.yml"

@@ -1,0 +1,9 @@
+linux:
+  security_context:
+    namespace_options:
+      network: 2
+log_directory: /var/log/s3/spark-{{ spark_role }}
+metadata:
+  name: spark-{{ spark_role }}
+  namespace: scality
+port_mappings: []
