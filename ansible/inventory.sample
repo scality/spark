@@ -55,6 +55,10 @@ sparkworkers
 [sparkmaster]
 stor-01
 
+[sparkmaster:vars]
+spark_role=master
+container_name=master
+
 # Place all workers into sparkworkers. Add your master to run a worker on it.
 [sparkworkers]
 stor-01
@@ -69,6 +73,10 @@ stor-06
 #worker-01
 #worker-02
 #worker-03
+
+[sparkworkers:vars]
+spark_role=worker
+container_name=worker
 
 # To automatically fill out the config.yml define a supervisor group
 # and include an ansible host in the group for the supervisor
