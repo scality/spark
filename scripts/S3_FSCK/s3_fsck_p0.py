@@ -31,7 +31,9 @@ ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
-# The arcindex is a map between the ARC Schema and the hex value found in the ringkey in the 24 bits preceding the last 8 bits of the key
+# The arcindex maps the ARC Schema to the hex value found in the ringkey, in the 24 bits preceding the last 8 bits of the key
+# e.g. FD770A344D6A6D259F92C500000000512040C070
+#      FD770A344D6A6D259F92C50000000051XXXXXX70 where XXXXXX : 2040C0
 arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
@@ -119,7 +121,7 @@ def sparse(f):
 
 
 def check_split(key):
-    """Check if the RING key is split or not. Return True if split, False if not split, None if error (422, 404, 50X, etc.)"""
+    """With srebuildd, check if the RING key is split or not. Return True if split, False if not split, None if error (422, 404, 50X, etc.)"""
     url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
@@ -130,6 +132,8 @@ def check_split(key):
 def blob(row):
     """Return a list of dict with the sproxyd input key, its subkey if it exists and digkey"""
     # set key from row._c2 (column 3) which contains an sproxyd input key
+    # input structure: (bucket name, s3 object key, sproxyd input key)
+    # FIXME: the naming of the method is terrible
     key = row._c2
     # use the sproxyd input key to find out if the key is split or not
     # check_split(key) is used to transform the input key into a RING key, assess if it exists AND whether it is a SPLIT.
@@ -158,7 +162,7 @@ def blob(row):
                     # "key": key == primary sproxyd input key of a split object
                     # "subkey": k == subkey sproxyd input key of an individual stripe of a split object
                     # "digkey": gen_md5_from_id(k)[:26] == md5 of the subkey
-                    # digkey: the unqiue part of a main chunk before service id,
+                    # digkey: the unique part of a main chunk before service id,
                     # arc schema, and class are appended
                     rtlst.append(
                         {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
@@ -184,23 +188,28 @@ def blob(row):
         # return a dict with the key (primary sproxyd input key),
         # subkey set to SINGLE and
         # digkey, (md5 of the subkey)
-        # digkey: the unqiue part of a main chunk before service id,
+        # digkey: the unique part of a main chunk before service id,
         # arc schema, and class are appended
         return [{"key": key, "subkey": "SINGLE", "digkey": gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
 
-# s3-bucketd structure: 
-# { bucket, s3 object, sproxyd input key }
-# e.g. test,2022%2F04%2F23%2Fclients%2F798a98d2367e8d5d4%2Fobject%2F1000.idx,08BC471F14C77A14C2F1A9C78F6BCD59FB7A5B20
+# reading without a header, 
+# columns _c0, _c1, _c2 are the default column names of 
+# columns   1,   2,   3 for the csv
+# input structure: (bucket name, s3 object key, sproxyd input key)
+#   e.g. test,48K_object.01,9BC9C6080ED24A42C2F1A9C78F6BCD5967F70220
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 # repartition the dataframe to have the same number of partitions as the number of executors * cores
 df = df.repartition(PARTITIONS)
+# Return a new Resilient Distributed Dataset (RDD) by applying a function to each element of this RDD.
 rdd = df.rdd.map(lambda x : blob(x))
+# Return a new RDD by first applying a function to all elements of this RDD, and then flattening the results. Then transform it into a dataframe.
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
 single = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
 # write the dataframe to a csv file with a header
+#   output structure: (digkey, sproxyd input key, subkey if available)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)
