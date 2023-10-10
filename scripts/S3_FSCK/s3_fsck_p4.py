@@ -69,7 +69,13 @@ def deletekey(row):
 
 files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
 
-# reading without a header, the _c0, _c1, _c2, _c3 are the default column names for column 1, 2, 3, 4
+# reading without a header,
+# columns _c0 is the default column names of
+# column    1 for the csv
+# input structure: _c0 (main chunk)
+#   e.g. 998C4DF2FC7389A7C82A9600000000512040C070
+# Required Fields:
+#   - _c0 (main chunk)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
 # rename the column _c0 (column 1) to ringkey
 df = df.withColumnRenamed("_c0","ringkey")

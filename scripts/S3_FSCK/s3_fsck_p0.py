@@ -195,11 +195,13 @@ def blob(row):
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
 
-# reading without a header, 
-# columns _c0, _c1, _c2 are the default column names of 
+# reading without a header,
+# columns _c0, _c1, _c2 are the default column names of
 # columns   1,   2,   3 for the csv
 # input structure: (bucket name, s3 object key, sproxyd input key)
 #   e.g. test,48K_object.01,9BC9C6080ED24A42C2F1A9C78F6BCD5967F70220
+# Required Fields:
+#   - _c2 (sproxyd input key)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
 # repartition the dataframe to have the same number of partitions as the number of executors * cores

@@ -84,8 +84,16 @@ def statkey(row):
 
 
 files = "%s://%s/%s/s3fsck/s3objects-missing.csv" % (PROTOCOL, PATH, RING)
-# Create a dataframe from the csv file not using the header, the columns will be _c0, _c1, _c2
+
+# reading without a header,
+# columns _c0 is the default column names of
+# column    1 for the csv
+# input structure: _c0 (main chunk)
+#   e.g. 998C4DF2FC7389A7C82A9600000000512040C070
+# Required Fields:
+#   - _c0 (main chunk)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").load(files)
+
 # Create a resilient distributed dataset (RDD) from the dataframe (logical partitions of data)
 # The rdd is a collection of tuples returned from statkey (key, status_code, size)
 rdd = df.rdd.map(statkey)
