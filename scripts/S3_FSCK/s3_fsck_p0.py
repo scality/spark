@@ -31,6 +31,9 @@ ARC = cfg["arc_protection"]
 COS = cfg["cos_protection"]
 PARTITIONS = int(cfg["spark.executor.instances"]) * int(cfg["spark.executor.cores"])
 
+# The arcindex maps the ARC Schema to the hex value found in the ringkey, in the 24 bits preceding the last 8 bits of the key
+# e.g. FD770A344D6A6D259F92C500000000512040C070
+#      FD770A344D6A6D259F92C50000000051XXXXXX70 where XXXXXX : 2040C0
 arcindex = {"4+2": "102060", "8+4": "2040C0", "9+3": "2430C0", "7+5": "1C50C0", "5+7": "1470C0"}
 
 os.environ["PYSPARK_SUBMIT_ARGS"] = '--packages "org.apache.hadoop:hadoop-aws:2.7.3" pyspark-shell'
@@ -118,6 +121,7 @@ def sparse(f):
 
 
 def check_split(key):
+    """With srebuildd, check if the RING key is split or not. Return True if split, False if not split, None if error (422, 404, 50X, etc.)"""
     url = "http://%s:81/%s/%s" % (SREBUILDD_IP, SREBUILDD_ARC_PATH, str(key.zfill(40)))
     r = requests.head(url)
     if r.status_code == 200:
@@ -126,9 +130,16 @@ def check_split(key):
 
 
 def blob(row):
+    """Return a list of dict with the sproxyd input key, its subkey if it exists and digkey"""
+    # set key from row._c2 (column 3) which contains an sproxyd input key
+    # input structure: (bucket name, s3 object key, sproxyd input key)
+    # FIXME: the naming of the method is terrible
     key = row._c2
+    # use the sproxyd input key to find out if the key is split or not
+    # check_split(key) is used to transform the input key into a RING key, assess if it exists AND whether it is a SPLIT.
     split = check_split(key)
     if not split['result']:
+        # If the key is not found, return a dict with the key, subkey and digkey set to NOK_HTTP
         return [{"key":key, "subkey":"NOK_HTTP", "digkey":"NOK_HTTP"}]
     if split['is_split']:
         try:
@@ -146,25 +157,61 @@ def blob(row):
                         chunks = chunk + chunk
                 chunkshex = chunks.encode("hex")
                 rtlst = []
+                # the k value is the subkey, a subkey is the sproxyd input key for each stripe of the split
                 for k in list(set(sparse(chunkshex))):
+                    # "key": key == primary sproxyd input key of a split object
+                    # "subkey": k == subkey sproxyd input key of an individual stripe of a split object
+                    # "digkey": gen_md5_from_id(k)[:26] == md5 of the subkey
+                    # digkey: the unique part of a main chunk before service id,
+                    # arc schema, and class are appended
                     rtlst.append(
                         {"key": key, "subkey": k, "digkey": gen_md5_from_id(k)[:26]}
                     )
+                # If the key is split and request is OK:
+                # return a list of dicts with the key (primary sproxyd input key),
+                # subkey (sproxyd input key of a split stripe) and
+                # digkey, (md5 of the subkey)
+                # digkey: the unqiue part of a main chunk before service id,
+                # arc schema, and class are appended
                 return rtlst
+            # If the key is split and request is not OK:
+            # return a dict with the key (primary sproxyd input key)
+            # with both subkey and digkey columns set to NOK
             return [{"key": key, "subkey": "NOK", "digkey": "NOK"}]
         except requests.exceptions.ConnectionError as e:
+            # If there is a Connection Error in the HTTP request:
+            # return a dict with the key(primary sproxyd input key),
+            # with both subkey and digkey set to NOK
             return [{"key": key, "subkey": "NOK_HTTP", "digkey": "NOK_HTTP"}]
     if not split['is_split']:
+        # If the key is not split:
+        # return a dict with the key (primary sproxyd input key),
+        # subkey set to SINGLE and
+        # digkey, (md5 of the subkey)
+        # digkey: the unique part of a main chunk before service id,
+        # arc schema, and class are appended
         return [{"key": key, "subkey": "SINGLE", "digkey": gen_md5_from_id(key)[:26]}]
 
 new_path = os.path.join(PATH, RING, "s3-bucketd")
 files = "%s://%s" % (PROTOCOL, new_path)
 
+# reading without a header,
+# columns _c0, _c1, _c2 are the default column names of
+# columns   1,   2,   3 for the csv
+# input structure: (bucket name, s3 object key, sproxyd input key)
+#   e.g. test,48K_object.01,9BC9C6080ED24A42C2F1A9C78F6BCD5967F70220
+# Required Fields:
+#   - _c2 (sproxyd input key)
 df = spark.read.format("csv").option("header", "false").option("inferSchema", "true").option("delimiter", ",").load(files)
 
+# repartition the dataframe to have the same number of partitions as the number of executors * cores
 df = df.repartition(PARTITIONS)
+# Return a new Resilient Distributed Dataset (RDD) by applying a function to each element of this RDD.
 rdd = df.rdd.map(lambda x : blob(x))
+# Return a new RDD by first applying a function to all elements of this RDD, and then flattening the results. Then transform it into a dataframe.
 dfnew = rdd.flatMap(lambda x: x).toDF()
 
 single = "%s://%s/%s/s3fsck/s3-dig-keys.csv" % (PROTOCOL, PATH, RING)
+# write the dataframe to a csv file with a header
+#   output structure: (digkey, sproxyd input key, subkey if available)
 dfnew.write.format("csv").mode("overwrite").options(header="true").save(single)
