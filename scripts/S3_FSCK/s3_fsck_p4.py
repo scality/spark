@@ -83,7 +83,7 @@ df = df.withColumnRenamed("_c0","ringkey")
 # repartition the dataframe to the number of partitions (executors * cores)
 df = df.repartition(PARTITIONS)
 
-# map the deletekey function to the dataframe
+# map the deletekey function to the dataframe: blindly delete keys on the RING.
 rdd = df.rdd.map(deletekey).toDF()
 
 deletedorphans = "%s://%s/%s/s3fsck/deleted-s3-orphans.csv" % (PROTOCOL, PATH, RING)

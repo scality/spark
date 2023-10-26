@@ -59,21 +59,21 @@ dfs3keys = spark.read.format("csv").option("header", "true").option("inferSchema
 # columns _c1, count, ringkey (main chunk) are the actual column names of
 # columns   1,     2,                    3 for the csv
 # input structure: (digkey, count, ringkey (main chunk))
-#   e.g. 7359114991482315D0A5890000,BDE4B9BBEB45711EC2F1A9C78F6BCD59E02C6220,SINGLE
+#   e.g. 907024530554A8DB3167280000,12,907024530554A8DB31672800000000512430C070
 # Required Fields:
 #  - digkey
 #  - ringkey (main chunk)
 dfringkeys =  spark.read.format("csv").option("header", "true").option("inferSchema", "true").load(ringkeys)
 
 # rename the column _c1 to digkey, the next write will output a header that uses digkey instead of _c1
-# digkey: the unqiue part of a main chunk before service id, arc schema, and class are appended
+# digkey: the unique part of a main chunk before service id, arc schema, and class are appended
 dfringkeys = dfringkeys.withColumnRenamed("_c1","digkey")
 
 # inner join the s3keys (sproxyd input key) and ringkeys (the main chunk of the strip or replica)
 # on the digkey column. The result will be a dataframe with the columns ringkey, digkey
 # the inner join leftani will not return rows that are present in both dataframes, 
 # eliminating ringkeys (main chunks) that have metadata in s3 (not application orphans).
-# digkey: the unqiue part of a main chunk before service id, arc schema, and class are appended
+# digkey: the unique part of a main chunk before service id, arc schema, and class are appended
 # ringkey: the main chunk of the strip or replica
 inner_join_false =  dfringkeys.join(dfs3keys,["digkey"], "leftanti").withColumn("is_present", F.lit(int(0))).select("ringkey", "is_present", "digkey")
 
