@@ -27,6 +27,7 @@ cmd = "./spark-2.4.3-bin-hadoop2.7/bin/spark-submit --master %s \
         --driver-memory=10g \
         --executor-memory=10g \
 	--total-executor-cores=%s \
+        --conf spark.executorEnv.SHELL=/bin/bash \
 	--conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
 	--conf spark.hadoop.fs.s3a.access.key=%s \
 	--conf spark.hadoop.fs.s3a.secret.key=%s \
