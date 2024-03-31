@@ -25,8 +25,8 @@ do
         verifyBucketSproxydKeys.js  \
         > ${WORKDIR}/raw_${bucket}_keys.txt
 
-    echo "--- Processing output... ---"
-    jq -r '. | select(.message | contains("sproxyd key"))  + {"bucket": .objectUrl  } | .bucket |= sub("s3://(?<bname>.*)/.*"; .bname) | .objectUrl |= sub("s3://.*/(?<oname>.*)$"; .oname) | [.bucket, .objectUrl, .sproxydKey] | @csv' ${WORKDIR}/raw_${bucket}_keys.txt > ${WORKDIR}/${bucket}_keys.txt
+    echo "--- Processing output of ${bucket}... ---"
+    jq -r 'select(.message | contains("sproxyd key"))| [(.objectUrl | split("s3://") | .[1] | split("/") | .[0]),(.objectUrl | split("s3://") | .[1] | split("/") | .[-1]),.sproxydKey]| @csv' ${WORKDIR}/raw_${bucket}_keys.txt > ${WORKDIR}/${bucket}_keys.txt
     rm -f ${WORKDIR}/raw_${bucket}_keys.txt
-    echo
+    echo "--- Lines count of ${bucket}: $(wc -l ${WORKDIR}/${bucket}_keys.txt) ---"
 done
