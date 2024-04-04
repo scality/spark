@@ -81,7 +81,7 @@ def rev_lookup(key):
 def split_lookup(key):
     try:
         ip_port = "{}:{}".format(get_local_ip(), get_random_port())
-        cmd = "ssh -qT $(hostname -i) {} -b '{}' -d '{}' {} 2>/dev/null | strings | awk '/index/{{$1=substr($1,length($1)-39,40); print}}'".format(SPLITGETUSERMD_BIN, ip_port, ARCDATA_DRIVER, key)
+        cmd = "ssh -qT $(hostname -i) {} -b '{}' -d '{}' {} 2>/dev/null | strings -T binary -a | awk '/index/{{$1=substr($1,length($1)-39,40); print}}'".format(SPLITGETUSERMD_BIN, ip_port, ARCDATA_DRIVER, key)
         print("  Executing split_lookup command: {}".format(cmd))
         output = subprocess.check_output(cmd, shell=True, stderr=sys.stdout)
         print("  split_lookup output: {}".format(output))
