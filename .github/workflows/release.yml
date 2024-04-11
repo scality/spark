@@ -36,13 +36,11 @@ on:
 run-name: Release ${{ inputs.tag }}
 
 env:
-  image_path: spark-dev/deployment
   staging_path: ${{ github.workspace }}/staging
-  registry: registry.scality.com
+  registry: ghcr.io
   img: fieldreportservice
-  image: registry.scality.com/spark-dev/deployment
   staging_archive: spark-offline-archive-${{ inputs.tag }}${{ inputs.prerelease == true && '-prerelease' || '' }}.run
-  s3utils_image: registry.scality.com/s3utils/s3utils:1.14.0
+  s3utils_image: ghcr.io/scality/s3utils:1.14.6
   nginx_image: docker.io/library/nginx:1.21.6-alpine
 
 jobs:
@@ -66,7 +64,7 @@ jobs:
       - name: Registry Login
         uses: docker/login-action@v2.1.0
         with:
-          registry: registry.scality.com
+          registry: ghcr.io
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Ensure makeself is installed

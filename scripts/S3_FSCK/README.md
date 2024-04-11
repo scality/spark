@@ -144,10 +144,10 @@ arc_protection: 8+4
 
 ### Primary method
 
-* Pull the s3utils:1.12.5 or newer container image.
+* Pull the s3utils:1.14.6 or newer container image.
 
 ```
-# docker pull registry.scality.com/s3utils/s3utils:1.12.5
+# docker pull ghcr.io/scality/s3utils:1.14.6
 ```
 
 ### Alternative method
@@ -223,7 +223,7 @@ do
         -e "BUCKETS=${bucket}" \
         -e 'NO_MISSING_KEY_CHECK=1' \
         -e 'VERBOSE=1' \
-        scality/s3utils:1.12.5 \
+        ghcr.io/scality/s3utils:1.14.6 \
         verifyBucketSproxydKeys.js  \
         | jq -r "[. | select(.message | contains(\"sproxyd key\"))  + {\"bucket\": .objectUrl  } | .bucket |= sub(\"s3://(?<bname>.*)/.*\"; \"\(.bname)\") | .objectUrl |= sub(\"s3://.*/(?<oname>.*)$\"; \"\(.oname)\") | .bucket, .objectUrl, .sproxydKey] | @csv" \
         > ${WORKDIR}/${bucket}_keys.txt
