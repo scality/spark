@@ -109,7 +109,7 @@ Requirements:
 * Ansible Galaxy community.general collection
 * A host in the ``[staging]`` group with internet access
 * SSH Agent/Keys which provide access to the Scality GitHub repository
-* Defining the registry.scality.com credentials in inventory or command line
+* Defining the ghcr.io credentials in inventory or command line
 
 When registry_user and registry_password (lowercase) Ansible variables are 
 defined in the inventory file: 
@@ -133,8 +133,8 @@ the container host.
 
 * Use an SSH Agent with the SSH key added that can connect to the inventory host
 in the `[staging]` group
-* Set the REGISTRY_USER variable to match a registry.scality.com API user 
-* Set the REGISTRY_PASSWORD variable to matching API password
+* Set the REGISTRY_USER variable to your GitHub username. 
+* Set the REGISTRY_PASSWORD variable to a [GitHub PAT](https://github.com/settings/tokens) with `packages:read` permissions.
 
 When using docker set environment variables in all upper case. Inside the 
 inventory file you will see the same variables in all lower case.
@@ -147,19 +147,27 @@ Agent and/or Keys to the container.
 
 1. Pulling the spark-deployment image from registry
    ```commandline
-   [docker|podman] pull registry.scality.com/spark/spark-deployment:latest
+   [docker|podman] pull ghcr.io/scality/spark/spark-deployment:latest
    ```
 
-2. Build the spark-deployment image
+2. The spark-deployment image
 
-   ```commandline
-   cd spark/ansible
-   [docker|podman] build . -f Containerfile -t registry.scality.com/spark/spark-deployment:latest
-   ```
+   * Pull a published image if there are no changes to spark/ansible
 
-3. Using Podman generate the offline archive 
+     ```commandline
+     [docker|podman] pull ghcr.io/scality/spark/spark-deployment:latest
+     ```
+
+   * Build the image from scratch if spark/ansible has been modified
+
+     ```commandline
+     cd spark/ansible
+     [docker|podman] build . -f Containerfile -t ghcr.io/scality/spark/spark-deployment:latest
+     ```
+
+3. Generate the offline archive 
 ```commandline
-podman run --privileged \
+[docker|podman] run --privileged \
   --rm \
   --net host \
   -i -t \
@@ -168,9 +176,9 @@ podman run --privileged \
   -e "SSH_AUTH_SOCK=/ssh-agent" \
   --volume ${SSH_AUTH_SOCK}:/ssh-agent \
   -e "REGISTRY_USER=User_Name" \
-  -e "REGISTRY_PASSWORD=<CLI/API_KEY>" \
+  -e "REGISTRY_PASSWORD=<GitHub PAT>" \
   -v ~/.ssh:/ansible/.ssh:rw \
-  registry.scality.com/spark/spark-deployment:latest \
+  ghcr.io/scality/spark/spark-deployment:latest \
   stage
 ```
 
@@ -204,18 +212,18 @@ skipping: [localhost]
 TASK [stage-spark-cluster : Archive the spark repository into the staging directory] ***************************************************
 changed: [localhost]
 
-TASK [stage-spark-cluster : Login to the registry registry.scality.com] ****************************************************************
+TASK [stage-spark-cluster : Login to the registry ghcr.io] ****************************************************************
 changed: [localhost]
 
-TASK [stage-spark-cluster : Pull containers from registry registry.scality.com] ********************************************************
-changed: [localhost] => (item=registry.scality.com/spark/spark-master:latest)
-changed: [localhost] => (item=registry.scality.com/spark/spark-worker:latest)
-changed: [localhost] => (item=registry.scality.com/s3utils/s3utils:1.12.5)
+TASK [stage-spark-cluster : Pull containers from registry ghcr.io] ********************************************************
+changed: [localhost] => (item=ghcr.io/scality/spark/spark-master:latest)
+changed: [localhost] => (item=ghcr.io/scality/spark/spark-worker:latest)
+changed: [localhost] => (item=ghcr.io/scality/s3utils:1.14.6)
 
 TASK [stage-spark-cluster : Save the images into the staging directory] ****************************************************************
-changed: [localhost] => (item=registry.scality.com/spark/spark-master:latest)
-changed: [localhost] => (item=registry.scality.com/spark/spark-worker:latest)
-changed: [localhost] => (item=registry.scality.com/s3utils/s3utils:1.12.5)
+changed: [localhost] => (item=ghcr.io/scality/spark/spark-master:latest)
+changed: [localhost] => (item=ghcr.io/scality/spark/spark-worker:latest)
+changed: [localhost] => (item=ghcr.io/scality/s3utils:1.14.6)
 
 TASK [stage-spark-cluster : Generate setup.sh for makeself] ****************************************************************************
 changed: [localhost]
