@@ -133,7 +133,7 @@ the container host.
 
 * Use an SSH Agent with the SSH key added that can connect to the inventory host
 in the `[staging]` group
-* Set the REGISTRY_USER variable to match a ghcr.io API user 
+* Set the REGISTRY_USER variable to your GitHub username. 
 * Set the REGISTRY_PASSWORD variable to matching API password
 
 When using docker set environment variables in all upper case. Inside the 
