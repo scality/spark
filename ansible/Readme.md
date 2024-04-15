@@ -134,7 +134,7 @@ the container host.
 * Use an SSH Agent with the SSH key added that can connect to the inventory host
 in the `[staging]` group
 * Set the REGISTRY_USER variable to your GitHub username. 
-* Set the REGISTRY_PASSWORD variable to matching API password
+* Set the REGISTRY_PASSWORD variable to a [GitHub PAT](https://github.com/settings/tokens) with `packages:read` permissions.
 
 When using docker set environment variables in all upper case. Inside the 
 inventory file you will see the same variables in all lower case.
