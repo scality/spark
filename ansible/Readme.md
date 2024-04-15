@@ -176,7 +176,7 @@ Agent and/or Keys to the container.
   -e "SSH_AUTH_SOCK=/ssh-agent" \
   --volume ${SSH_AUTH_SOCK}:/ssh-agent \
   -e "REGISTRY_USER=User_Name" \
-  -e "REGISTRY_PASSWORD=<CLI/API_KEY>" \
+  -e "REGISTRY_PASSWORD=<GitHub PAT>" \
   -v ~/.ssh:/ansible/.ssh:rw \
   ghcr.io/scality/spark/spark-deployment:latest \
   stage
