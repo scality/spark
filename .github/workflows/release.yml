@@ -65,8 +65,8 @@ jobs:
         uses: docker/login-action@v2.1.0
         with:
           registry: ghcr.io
-          username: ${{ secrets.REGISTRY_LOGIN }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Ensure makeself is installed
         run: |
           sudo apt-get update
@@ -76,14 +76,14 @@ jobs:
           git archive --prefix=spark/ --output=${{ env.staging_path }}/spark-repo.tar --format=tar HEAD
       - name: Pull containers from ${{ env.registry }}
         run: |
-          docker pull ${{ env.registry }}/spark/spark-master:latest
-          docker pull ${{ env.registry }}/spark/spark-worker:latest
+          docker pull ${{ env.registry }}/scality/spark/spark-master:latest
+          docker pull ${{ env.registry }}/scality/spark/spark-worker:latest
           docker pull ${{ env.s3utils_image }}
           docker pull ${{ env.nginx_image }}
       - name: Save the images into the staging directory
         run: |
-          docker save -o ${{ env.staging_path }}/spark-master.tar ${{ env.registry }}/spark/spark-master:latest
-          docker save -o ${{ env.staging_path }}/spark-worker.tar ${{ env.registry }}/spark/spark-worker:latest
+          docker save -o ${{ env.staging_path }}/spark-master.tar ${{ env.registry }}/scality/spark/spark-master:latest
+          docker save -o ${{ env.staging_path }}/spark-worker.tar ${{ env.registry }}/scality/spark/spark-worker:latest
           docker save -o ${{ env.staging_path }}/s3utils.tar ${{ env.s3utils_image }}
           docker save -o ${{ env.staging_path }}/nginx.tar ${{ env.nginx_image }}
       - name: Copy the setup script into the staging directory
