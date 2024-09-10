@@ -1,0 +1,12 @@
+pandas
+numpy
+requests
+pyyaml
+pyopenssl
+certifi
+pycurl
+kazoo
+pyzmq
+python-dateutil
+s3fs
+pyspark==3.5.2
