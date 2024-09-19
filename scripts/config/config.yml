@@ -1,0 +1,28 @@
+master: "spark://spark-master:7077"
+ring: "DATA"
+path: "bkt-2rn-spark"
+protocol: s3a      # Protocol can be either file or s3a.
+# Protocol file requires SOFS+DLM & path is the folder to write to within the SOFS volume.
+# Protocol s3a requires access/secret keys & endpoint URL & path is the bucket name within s3 to use.
+srebuildd_ip: "127.0.0.1"
+srebuildd_chord_path: "rebuild/chord-DATA"
+srebuildd_arc_path: "rebuild/arc-DATA"
+srebuildd_arcdata_path: "rebuild/arcdata-DATA"
+retention: 86400
+arc_protection: 5+7
+cos_protection: 3
+s3:
+  access_key: "F5BQB2Q2H98ADEU9YIIP"
+  secret_key: "5YZs44jDWKCnhFaIgqcld3ta=JOXCH94EY/yiR46"
+  endpoint: "http://10.160.169.142:9000"
+sup:
+  url: "https://10.160.187.146:2443"
+  login: "root"
+  password: "ZStkqfhiFvlEdKB7qJVqJc4TR"
+spark.executor.cores: 3
+spark.executor.instances: 3
+spark.executor.memory: "2g"
+spark.driver.memory: "2g"
+spark.memory.offHeap.enabled: True
+spark.memory.offHeap.size: "6g"
+spark.driver.bindAddress: "10.160.169.142" # Ip address of the first node, from where you will run the scripts
