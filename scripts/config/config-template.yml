@@ -1,6 +1,7 @@
-master: "" # spark master ip:port, usually port=7077
+master: "spark://spark-master:7077"
 ring: "DATA"
-path: "/fs/spark/" # bucket name, can be named "orphans" 
+path: "/fs/spark/"
+spark.driver.bindAddress: "" # Ip address of the first node, from where you will run the scripts
 protocol: file      # Protocol can be either file or s3a.
 # Protocol file requires SOFS+DLM & path is the folder to write to within the SOFS volume.
 # Protocol s3a requires access/secret keys & endpoint URL & path is the bucket name within s3 to use.
@@ -8,11 +9,6 @@ srebuildd_ip: "127.0.0.1"
 srebuildd_chord_path: "rebuild/chord-DATA"
 srebuildd_arc_path: "rebuild/arc-DATA"
 srebuildd_arcdata_path: "rebuild/arcdata-DATA"
-nasdk_tools:
-  scalarcrevlookupid_bin: "/usr/bin/scalarcrevlookupid"
-  scalsplitgetusermd_bin: "/usr/bin/scalsplitgetusermd"
-  port_range: [4244, 4249] # typical DATA RING bizstorenode port range
-  arcdata_path: "arcdata-DATA"
 retention: 604800
 arc_protection: 8+4
 cos_protection: 3
