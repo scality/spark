@@ -25,7 +25,7 @@ ENV SPARK_MASTER="spark://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT}"
 ENV PYSPARK_PYTHON=python3
 ENV PYTHONPATH=$SPARK_HOME/python/:$PYTHONPATH
 
-RUN mkdir -p ${HADOOP_HOME} ${SPARK_HOME}
+RUN mkdir -p ${HADOOP_HOME} ${SPARK_HOME} /spark/jars/
 WORKDIR ${SPARK_HOME}
 
 COPY requirements.txt /tmp/requirements.txt
