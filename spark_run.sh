@@ -66,10 +66,16 @@ case $1
                     host_storage+="$i $n\n"
                 done
                 test -n "$host_storage" && echo -e "# Host file updated for Spark\n$host_storage" >> /etc/hosts
-                
-                test "$(grep -qw spark-master /etc/hosts ; echo $?)" == 0 || \
-                echo "$master spark-master" >> /etc/hosts
-                
+
+                # Manage when a role has changed in the same node
+                # spark-master should be known on all nodes
+                if ! grep -q "$master spark-master # set-by-spark_run.sh" /etc/hosts;
+                then
+                    grep -q "spark-master # set-by-spark_run.sh" /etc/hosts && \
+                        sed -i '/spark-master # set-by-spark_run.sh/d' /etc/hosts
+                    echo "$master spark-master # set-by-spark_run.sh" >> /etc/hosts
+                fi
+
                 if [ -n "$local_master" ] ; then
                     echo "Running master here"
                     # remove if exists, throw error if running
@@ -105,21 +111,27 @@ case $1
                     # resume task
                     $container_command t start -d spark-master
                 fi
-                
+
                 if [ -n "$local_worker" ] ; then
-                    test "$(grep -qw spark-worker /etc/hosts ; echo $?)" == 0 || \
-                    echo "$local_worker spark-worker" >> /etc/hosts
-                    
+                    # Manage when a role has changed in the same node
+                    # spark-worker is only a local name
+                    if ! grep -q "$local_worker spark-worker # set-by-spark_run.sh" /etc/hosts;
+                    then
+                        grep -q "spark-worker # set-by-spark_run.sh" /etc/hosts && \
+                            sed -i '/spark-worker # set-by-spark_run.sh/d' /etc/hosts
+                        echo "$local_worker spark-worker # set-by-spark_run.sh" >> /etc/hosts
+                    fi
+
                     echo "Running worker here"
                     # remove if exists, throw error if running
                     c=$($container_command c ls |grep -w spark-worker)
                     echo "Checking if the container aleady exists"
                     test -n "$c" && \
                     $container_command c rm spark-worker
-                    
+
                     echo "Creating /tmp/spark-worker directory"
                     mkdir -p /tmp/spark-worker
-                    
+
                     echo "
                     $container_command run -d --net-host \
                     --mount='type=bind,src=/root/spark-apps,dst=/opt/spark/apps,options=rbind:rw' \
@@ -138,7 +150,7 @@ case $1
                     --env='SPARK_NO_DAEMONIZE=true' \
                     registry.scality.com/spark/spark-container:3.5.2 spark-worker \
                     ./entrypoint.sh worker
-                   
+
                     # pause
                     $container_command t kill -a spark-worker
                     sleep 1
@@ -147,6 +159,9 @@ case $1
                     sleep 1
                     # resume task
                     $container_command t start -d spark-worker
+                else
+                    grep -q "spark-worker # set-by-spark_run.sh" /etc/hosts && \
+                        sed -i '/spark-worker # set-by-spark_run.sh/d' /etc/hosts
                 fi
             ;;
         esac
@@ -159,7 +174,7 @@ case $1
                     echo "Stopping master here"
                     $container_command stop spark-master
                 fi
-                
+
                 if [ -n "$local_worker" ] ; then
                     echo "Stopping worker here"
                     $container_command stop spark-worker
@@ -174,7 +189,7 @@ case $1
                     sleep 1
                     $container_command c rm spark-master
                 fi
-                
+
                 if [ -n "$local_worker" ] ; then
                     echo "Stoping worker here"
                     $container_command t kill --signal 9  -a spark-worker
