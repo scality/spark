@@ -2,7 +2,8 @@
 
 [ -z "$1" ] && echo "Usage: $0 <start|stop|status>" && exit 1
 
-# Pleasze change the IPs accordingly to your architecture
+# Please change the IPs according to your architecture
+# without tuning the entrypoint.sh, a worker cannot have a master running on the same host
 master="10.160.187.146"
 workers="10.160.169.142 10.160.173.126 10.160.174.196"
 
@@ -191,7 +192,7 @@ case $1
                 fi
 
                 if [ -n "$local_worker" ] ; then
-                    echo "Stoping worker here"
+                    echo "Stopping worker here"
                     $container_command t kill --signal 9  -a spark-worker
                     sleep 1
                     $container_command c rm spark-worker

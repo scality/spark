@@ -4,6 +4,9 @@ RUN --mount=type=cache,target=/var/cache/apt apt update \
     && apt-get install -y --no-install-recommends \
     sudo \
     curl \
+    awscli \
+    inetutils-ping \
+    netcat-traditional \
     wget \
     vim \
     unzip \
