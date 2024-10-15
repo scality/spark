@@ -46,8 +46,8 @@ def run_script(worker_id, script_path, flag1, flag2):
       --conf spark.hadoop.fs.s3a.access.key={cfg['s3']['access_key']} \
       --conf spark.hadoop.fs.s3a.secret.key={cfg['s3']['secret_key']} \
       --conf spark.hadoop.fs.s3a.endpoint={cfg['s3']['endpoint']} \
-      --jars file:/spark/jars/aws-java-sdk-1.12.770.jar,file:/spark/jars/hadoop-aws-3.3.4.jar \
-      --driver-class-path=/spark/jars/aws-java-sdk-1.12.770.jar:/spark/jars/hadoop-aws-3.3.4.jar \
+      --jars file:/spark/jars/aws-java-sdk-bundle-1.12.770.jar,file:/spark/jars/hadoop-aws-3.3.4.jar \
+      --driver-class-path=/spark/jars/aws-java-sdk-bundle-1.12.770.jar:/spark/jars/hadoop-aws-3.3.4.jar \
       --deploy-mode client \
       {script_path} {flag1} {flag2}"
 

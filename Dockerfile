@@ -51,10 +51,10 @@ RUN cd /tmp \
     && rm -f spark-3.5.2-bin-hadoop3.tgz
 
 # https://github.com/sayedabdallah/Read-Write-AWS-S3
-COPY aws-java-sdk-1.12.770.ja[r] /spark/jars/
+COPY aws-java-sdk-bundle-1.12.770.ja[r] /spark/jars/
 COPY hadoop-aws-3.3.4.ja[r] /spark/jars/
 RUN cd /spark/jars/ \
-    && wget -N https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.12.770/aws-java-sdk-1.12.770.jar \
+    && wget -N https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.770/aws-java-sdk-bundle-1.12.770.jar \
     && wget -N https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar
 
 RUN chmod u+x /opt/spark/sbin/* /opt/spark/bin/*
